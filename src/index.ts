@@ -7,6 +7,8 @@ export interface GitHubRepositoryOptions extends GitRepositoryOptions {
   repositoryOwner: string
   repositoryName: string
   personalAccessToken: string
+  pathSchemaFile?: string
+  pathEntryFolder?: string
 }
 
 export function createAdapter(): GitAdapter {

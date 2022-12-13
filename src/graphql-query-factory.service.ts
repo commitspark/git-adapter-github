@@ -29,13 +29,12 @@ export class GraphqlQueryFactoryService {
     repositoryOwner: string,
     repositoryName: string,
     ref: string,
-    path: string,
-    filename: string,
+    schemaFilePath: string,
   ): string {
     return `
       query { 
         repository(owner:"${repositoryOwner}", name:"${repositoryName}") {
-          object(expression:"${ref}:${path}/${filename}") {
+          object(expression:"${ref}:${schemaFilePath}") {
             ... on Blob {
               text
             }

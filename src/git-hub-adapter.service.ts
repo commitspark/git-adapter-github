@@ -4,10 +4,9 @@ import {
   CommitDraft,
   ContentEntry,
   ENTRY_EXTENSION,
-  ENTRY_FOLDER_NAME,
+  PATH_SCHEMA_FILE,
+  PATH_ENTRY_FOLDER,
   GitAdapter,
-  SCHEMA_FILENAME,
-  SCHEMA_FOLDER_NAME,
 } from '@contentlab/git-adapter'
 import { ContentEntriesToActionsConverterService } from './content-entries-to-actions-converter.service'
 import { parse } from 'yaml'
@@ -47,12 +46,13 @@ export class GitHubAdapterService implements GitAdapter {
     }
 
     const token = this.gitRepositoryOptions.personalAccessToken
+    const pathEntryFolder = this.getPathEntryFolder(this.gitRepositoryOptions)
 
     const queryFilesContent = this.graphqlQueryFactory.createBlobsContentQuery(
       this.gitRepositoryOptions.repositoryOwner,
       this.gitRepositoryOptions.repositoryName,
       commitHash,
-      ENTRY_FOLDER_NAME,
+      pathEntryFolder,
     )
     const filesContentResponse = await this.cachedHttpAdapter.post(
       GitHubAdapterService.API_URL,
@@ -84,14 +84,14 @@ export class GitHubAdapterService implements GitAdapter {
     const repositoryOwner = this.gitRepositoryOptions.repositoryOwner
     const repositoryName = this.gitRepositoryOptions.repositoryName
     const token = this.gitRepositoryOptions.personalAccessToken
-    const schemaFilePath = `${SCHEMA_FOLDER_NAME}/${SCHEMA_FILENAME}`
+    const schemaFilePath =
+      this.gitRepositoryOptions.pathSchemaFile ?? PATH_SCHEMA_FILE
 
     const queryContent = this.graphqlQueryFactory.createBlobContentQuery(
       repositoryOwner,
       repositoryName,
       commitHash,
-      SCHEMA_FOLDER_NAME,
-      SCHEMA_FILENAME,
+      schemaFilePath,
     )
     const response = await this.cachedHttpAdapter.post(
       GitHubAdapterService.API_URL,
@@ -158,9 +158,13 @@ export class GitHubAdapterService implements GitAdapter {
     }
 
     const token = this.gitRepositoryOptions.personalAccessToken
+    const pathEntryFolder = this.getPathEntryFolder(this.gitRepositoryOptions)
 
     const { additions, deletions } =
-      this.contentEntriesToActionsConverter.convert(commitDraft.contentEntries)
+      this.contentEntriesToActionsConverter.convert(
+        commitDraft.contentEntries,
+        pathEntryFolder,
+      )
 
     const mutateCommit = this.graphqlQueryFactory.createCommitMutation()
     const response: any = await this.httpAdapter.post(
@@ -194,5 +198,18 @@ export class GitHubAdapterService implements GitAdapter {
     }
 
     return new Commit(mutationResult.commit.oid)
+  }
+
+  private getPathEntryFolder(
+    gitRepositoryOptions: GitHubRepositoryOptions,
+  ): string {
+    const pathEntryFolder =
+      gitRepositoryOptions.pathEntryFolder ?? PATH_ENTRY_FOLDER
+
+    if (pathEntryFolder.endsWith('/')) {
+      return pathEntryFolder.substring(0, pathEntryFolder.length - 1)
+    }
+
+    return pathEntryFolder
   }
 }
