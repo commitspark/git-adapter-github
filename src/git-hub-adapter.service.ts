@@ -141,6 +141,12 @@ export class GitHubAdapterService implements GitAdapter {
       },
     )
 
+    if (!response.data.data.repository) {
+      throw new Error(
+        `No repository found "${this.gitRepositoryOptions.repositoryOwner}/${this.gitRepositoryOptions.repositoryName}"`,
+      )
+    }
+
     const lastCommit =
       response.data.data.repository.ref?.target?.oid ??
       response.data.data.repository.object?.oid ??
