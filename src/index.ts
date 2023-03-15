@@ -1,5 +1,5 @@
 import { GitAdapter, GitRepositoryOptions } from '@contentlab/git-adapter'
-import { app } from './container'
+import { gitHubAdapterService } from './container'
 
 export { GitHubAdapterService } from './git-hub-adapter.service'
 
@@ -12,5 +12,5 @@ export interface GitHubRepositoryOptions extends GitRepositoryOptions {
 }
 
 export function createAdapter(): GitAdapter {
-  return app.adapter
+  return gitHubAdapterService
 }
