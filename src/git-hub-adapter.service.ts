@@ -64,7 +64,11 @@ export class GitHubAdapterService implements GitAdapter {
       .map((entry: any) => {
         const content = parse(entry.object.text)
         const id = entry.name.substring(0, entry.name.length - extensionLength)
-        return new ContentEntry(id, content.metadata, content.data)
+        return {
+          id: id,
+          metadata: content.metadata,
+          data: content.data,
+        } as ContentEntry
       })
   }
 
@@ -196,7 +200,7 @@ export class GitHubAdapterService implements GitAdapter {
       throw new Error(JSON.stringify(mutationResult.errors))
     }
 
-    return new Commit(mutationResult.commit.oid)
+    return { ref: mutationResult.commit.oid }
   }
 
   private getPathEntryFolder(
