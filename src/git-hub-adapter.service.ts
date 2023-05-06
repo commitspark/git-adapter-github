@@ -59,6 +59,11 @@ export class GitHubAdapterService implements GitAdapter {
     )
 
     const extensionLength = ENTRY_EXTENSION.length
+
+    if (!filesContentResponse.data.data.repository?.object?.entries) {
+      return []
+    }
+
     return filesContentResponse.data.data.repository.object.entries
       .filter((entry: any) => entry.name.endsWith(ENTRY_EXTENSION))
       .map((entry: any) => {
