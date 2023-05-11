@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - [#3](https://github.com/contentlab-sh/git-adapter-github/issues/3) Fix text content is not UTF-8 encoded when executing mutations
+- Update `yaml` library to address [security advisory](https://github.com/advisories/GHSA-f9xv-q969-pqx4)
 
 ## [0.3.1] - 2023-05-06
 ### Fixed
