@@ -1,6 +1,8 @@
+import { Buffer } from 'buffer'
+
 export class AdditionModel {
   readonly contents: string
   constructor(readonly path: string, contents: string) {
-    this.contents = btoa(contents)
+    this.contents = Buffer.from(contents, 'utf8').toString('base64')
   }
 }
