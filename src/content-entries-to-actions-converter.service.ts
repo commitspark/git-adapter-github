@@ -1,4 +1,4 @@
-import { ContentEntryDraft, ENTRY_EXTENSION } from '@contentlab/git-adapter'
+import { ContentEntryDraft, ENTRY_EXTENSION } from '@commitspark/git-adapter'
 import { stringify } from 'yaml'
 import { AdditionModel } from './addition.model'
 import { DeletionModel } from './deletion.model'

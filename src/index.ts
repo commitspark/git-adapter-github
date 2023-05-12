@@ -1,4 +1,4 @@
-import { GitAdapter, GitRepositoryOptions } from '@contentlab/git-adapter'
+import { GitAdapter, GitRepositoryOptions } from '@commitspark/git-adapter'
 import { gitHubAdapterService } from './container'
 
 export { GitHubAdapterService } from './git-hub-adapter.service'

@@ -1,7 +1,6 @@
 # Introduction
 
-**[Contentlab](https://contentlab.sh) is a library that generates a fully functional CRUD GraphQL API for structured
-text data exclusively from files in a Git repository.**
+**[Commitspark](https://commitspark.com) is a workflow-first Content Management System based on Git and GraphQL.**
 
 This repository holds code that implements access to Git repositories hosted on GitHub.
 
@@ -12,7 +11,7 @@ the instance. These options are as follows:
 
 | Option name           | Required | Default value           | Description                                                                                                                                                           |
 |-----------------------|----------|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `repositoryOwner`     | True     |                         | GitHub repository owner, e.g. `contentlab-sh`                                                                                                                         |
+| `repositoryOwner`     | True     |                         | GitHub repository owner, e.g. `commitspark`                                                                                                                           |
 | `repositoryName`      | True     |                         | GitHub repository name, e.g. `git-adapter-github`                                                                                                                     |
 | `personalAccessToken` | True     |                         | GitHub [personal access token (classic)](https://docs.github.com/en/graphql/guides/forming-calls-with-graphql#authenticating-with-graphql) with at least `repo` scope |
 | `pathSchemaFile`      | False    | `schema/schema.graphql` | Path to schema file in repository                                                                                                                                     |
