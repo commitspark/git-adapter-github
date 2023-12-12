@@ -8,6 +8,7 @@ export class GraphqlQueryFactoryService {
               entries {
                 name
                 object {
+                  __typename
                   ... on Blob {
                     text
                   }

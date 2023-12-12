@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Switch to GraphQL query variables to prevent string escaping issues
 - Fix build process to include only relevant files
+- Refactor content entry instantiation to ignore non-blob objects
 
 ## [0.4.0] - 2023-05-12
 ### Changed

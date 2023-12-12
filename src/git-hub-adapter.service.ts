@@ -3,14 +3,13 @@ import {
   Commit,
   CommitDraft,
   ContentEntry,
-  ENTRY_EXTENSION,
   GitAdapter,
 } from '@commitspark/git-adapter'
 import { ContentEntriesToActionsConverterService } from './content-entries-to-actions-converter.service'
-import { parse } from 'yaml'
 import { AxiosCacheInstance } from 'axios-cache-interceptor'
 import { GitHubRepositoryOptions } from './index'
 import { PathFactoryService } from './path-factory.service'
+import { ContentEntryFactoryService } from './content-entry-factory.service'
 
 export class GitHubAdapterService implements GitAdapter {
   static readonly QUERY_CACHE_SECONDS = 10 * 60
@@ -24,6 +23,7 @@ export class GitHubAdapterService implements GitAdapter {
     private graphqlQueryFactory: GraphqlQueryFactoryService,
     private contentEntriesToActionsConverter: ContentEntriesToActionsConverterService,
     private pathFactory: PathFactoryService,
+    private contentEntryFactory: ContentEntryFactoryService,
   ) {}
 
   public async setRepositoryOptions(
@@ -60,23 +60,13 @@ export class GitHubAdapterService implements GitAdapter {
       },
     )
 
-    const extensionLength = ENTRY_EXTENSION.length
-
     if (!filesContentResponse.data.data.repository?.object?.entries) {
       return []
     }
 
-    return filesContentResponse.data.data.repository.object.entries
-      .filter((entry: any) => entry.name.endsWith(ENTRY_EXTENSION))
-      .map((entry: any) => {
-        const content = parse(entry.object.text)
-        const id = entry.name.substring(0, entry.name.length - extensionLength)
-        return {
-          id: id,
-          metadata: content.metadata,
-          data: content.data,
-        } as ContentEntry
-      })
+    return this.contentEntryFactory.createFromBlobsQueryResponseData(
+      filesContentResponse.data.data.repository.object.entries,
+    )
   }
 
   public async getSchema(commitHash: string): Promise<string> {
