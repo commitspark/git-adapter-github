@@ -1,14 +1,9 @@
 export class GraphqlQueryFactoryService {
-  public createBlobsContentQuery(
-    repositoryOwner: string,
-    repositoryName: string,
-    ref: string,
-    path: string,
-  ): string {
+  public createBlobsContentQuery(): string {
     return `
-      query { 
-        repository(owner:"${repositoryOwner}", name:"${repositoryName}") {
-          object(expression:"${ref}:${path}") {
+      query ($repositoryOwner: String!, $repositoryName: String!, $expression: String!) { 
+        repository(owner: $repositoryOwner, name: $repositoryName) {
+          object(expression: $expression) {
             ... on Tree {
               entries {
                 name
@@ -25,16 +20,11 @@ export class GraphqlQueryFactoryService {
     `
   }
 
-  public createBlobContentQuery(
-    repositoryOwner: string,
-    repositoryName: string,
-    ref: string,
-    schemaFilePath: string,
-  ): string {
+  public createBlobContentQuery(): string {
     return `
-      query { 
-        repository(owner:"${repositoryOwner}", name:"${repositoryName}") {
-          object(expression:"${ref}:${schemaFilePath}") {
+      query ($repositoryOwner: String!, $repositoryName: String!, $expression: String!) { 
+        repository(owner: $repositoryOwner, name: $repositoryName) {
+          object(expression: $expression) {
             ... on Blob {
               text
             }
@@ -47,26 +37,26 @@ export class GraphqlQueryFactoryService {
   public createCommitMutation(): string {
     return `
       mutation (
-        $repositoryNameWithOwner:String!,
-        $branchName:String!,
-        $commitMessage:String!,
-        $precedingCommitSha:GitObjectID!,
-        $additions:[FileAddition!],
-        $deletions:[FileDeletion!]
+        $repositoryNameWithOwner: String!,
+        $branchName: String!,
+        $commitMessage: String!,
+        $precedingCommitSha: GitObjectID!,
+        $additions: [FileAddition!],
+        $deletions: [FileDeletion!]
       ) {
-        commitCreate: createCommitOnBranch(input:{
-          branch:{
-            repositoryNameWithOwner:$repositoryNameWithOwner
-            branchName:$branchName
+        commitCreate: createCommitOnBranch(input: {
+          branch: {
+            repositoryNameWithOwner: $repositoryNameWithOwner
+            branchName: $branchName
           }
           message: {
-            headline:$commitMessage
+            headline: $commitMessage
             body:""
           }
-          expectedHeadOid:$precedingCommitSha
-          fileChanges:{
-            additions:$additions
-            deletions:$deletions
+          expectedHeadOid: $precedingCommitSha
+          fileChanges: {
+            additions: $additions
+            deletions: $deletions
           }
         }) {
           commit {
@@ -77,20 +67,16 @@ export class GraphqlQueryFactoryService {
     `
   }
 
-  public createLatestCommitQuery(
-    repositoryOwner: string,
-    repositoryName: string,
-    ref: string,
-  ): string {
+  public createLatestCommitQuery(): string {
     return `
-      query Content { 
-        repository(owner:"${repositoryOwner}", name:"${repositoryName}") {
-          ref(qualifiedName:"${ref}") {
+      query Content ($repositoryOwner: String!, $repositoryName: String!, $ref: String!) { 
+        repository(owner: $repositoryOwner, name: $repositoryName) {
+          ref(qualifiedName: $ref) {
             target {
               oid
             }
           }
-          object(expression:"${ref}") {
+          object(expression: $ref) {
             oid
           } 
         }
