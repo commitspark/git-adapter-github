@@ -5,13 +5,12 @@ import {
   ContentEntry,
   ENTRY_EXTENSION,
   GitAdapter,
-  PATH_ENTRY_FOLDER,
-  PATH_SCHEMA_FILE,
 } from '@commitspark/git-adapter'
 import { ContentEntriesToActionsConverterService } from './content-entries-to-actions-converter.service'
 import { parse } from 'yaml'
 import { AxiosCacheInstance } from 'axios-cache-interceptor'
 import { GitHubRepositoryOptions } from './index'
+import { PathFactoryService } from './path-factory.service'
 
 export class GitHubAdapterService implements GitAdapter {
   static readonly QUERY_CACHE_SECONDS = 10 * 60
@@ -24,6 +23,7 @@ export class GitHubAdapterService implements GitAdapter {
     private readonly cachedHttpAdapter: AxiosCacheInstance,
     private graphqlQueryFactory: GraphqlQueryFactoryService,
     private contentEntriesToActionsConverter: ContentEntriesToActionsConverterService,
+    private pathFactory: PathFactoryService,
   ) {}
 
   public async setRepositoryOptions(
@@ -38,7 +38,9 @@ export class GitHubAdapterService implements GitAdapter {
     }
 
     const token = this.gitRepositoryOptions.personalAccessToken
-    const pathEntryFolder = this.getPathEntryFolder(this.gitRepositoryOptions)
+    const pathEntryFolder = this.pathFactory.getPathEntryFolder(
+      this.gitRepositoryOptions,
+    )
 
     const queryFilesContent = this.graphqlQueryFactory.createBlobsContentQuery()
     const filesContentResponse = await this.cachedHttpAdapter.post(
@@ -85,8 +87,9 @@ export class GitHubAdapterService implements GitAdapter {
     const repositoryOwner = this.gitRepositoryOptions.repositoryOwner
     const repositoryName = this.gitRepositoryOptions.repositoryName
     const token = this.gitRepositoryOptions.personalAccessToken
-    const schemaFilePath =
-      this.gitRepositoryOptions.pathSchemaFile ?? PATH_SCHEMA_FILE
+    const schemaFilePath = this.pathFactory.getPathSchema(
+      this.gitRepositoryOptions,
+    )
 
     const queryContent = this.graphqlQueryFactory.createBlobContentQuery()
     const response = await this.cachedHttpAdapter.post(
@@ -166,7 +169,9 @@ export class GitHubAdapterService implements GitAdapter {
     }
 
     const token = this.gitRepositoryOptions.personalAccessToken
-    const pathEntryFolder = this.getPathEntryFolder(this.gitRepositoryOptions)
+    const pathEntryFolder = this.pathFactory.getPathEntryFolder(
+      this.gitRepositoryOptions,
+    )
 
     const { additions, deletions } =
       this.contentEntriesToActionsConverter.convert(
@@ -207,18 +212,5 @@ export class GitHubAdapterService implements GitAdapter {
     }
 
     return { ref: mutationResult.commit.oid }
-  }
-
-  private getPathEntryFolder(
-    gitRepositoryOptions: GitHubRepositoryOptions,
-  ): string {
-    const pathEntryFolder =
-      gitRepositoryOptions.pathEntryFolder ?? PATH_ENTRY_FOLDER
-
-    if (pathEntryFolder.endsWith('/')) {
-      return pathEntryFolder.substring(0, pathEntryFolder.length - 1)
-    }
-
-    return pathEntryFolder
   }
 }
