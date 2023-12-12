@@ -40,16 +40,16 @@ export class GitHubAdapterService implements GitAdapter {
     const token = this.gitRepositoryOptions.personalAccessToken
     const pathEntryFolder = this.getPathEntryFolder(this.gitRepositoryOptions)
 
-    const queryFilesContent = this.graphqlQueryFactory.createBlobsContentQuery(
-      this.gitRepositoryOptions.repositoryOwner,
-      this.gitRepositoryOptions.repositoryName,
-      commitHash,
-      pathEntryFolder,
-    )
+    const queryFilesContent = this.graphqlQueryFactory.createBlobsContentQuery()
     const filesContentResponse = await this.cachedHttpAdapter.post(
       GitHubAdapterService.API_URL,
       {
         query: queryFilesContent,
+        variables: {
+          repositoryOwner: this.gitRepositoryOptions.repositoryOwner,
+          repositoryName: this.gitRepositoryOptions.repositoryName,
+          expression: `${commitHash}:${pathEntryFolder}`,
+        },
       },
       {
         headers: {
@@ -88,16 +88,16 @@ export class GitHubAdapterService implements GitAdapter {
     const schemaFilePath =
       this.gitRepositoryOptions.pathSchemaFile ?? PATH_SCHEMA_FILE
 
-    const queryContent = this.graphqlQueryFactory.createBlobContentQuery(
-      repositoryOwner,
-      repositoryName,
-      commitHash,
-      schemaFilePath,
-    )
+    const queryContent = this.graphqlQueryFactory.createBlobContentQuery()
     const response = await this.cachedHttpAdapter.post(
       GitHubAdapterService.API_URL,
       {
         query: queryContent,
+        variables: {
+          repositoryOwner: repositoryOwner,
+          repositoryName: repositoryName,
+          expression: `${commitHash}:${schemaFilePath}`,
+        },
       },
       {
         headers: {
@@ -123,16 +123,17 @@ export class GitHubAdapterService implements GitAdapter {
 
     const token = this.gitRepositoryOptions.personalAccessToken
 
-    const queryLatestCommit = this.graphqlQueryFactory.createLatestCommitQuery(
-      this.gitRepositoryOptions.repositoryOwner,
-      this.gitRepositoryOptions.repositoryName,
-      ref,
-    )
+    const queryLatestCommit = this.graphqlQueryFactory.createLatestCommitQuery()
 
     const response = await this.cachedHttpAdapter.post(
       GitHubAdapterService.API_URL,
       {
         query: queryLatestCommit,
+        variables: {
+          repositoryOwner: this.gitRepositoryOptions.repositoryOwner,
+          repositoryName: this.gitRepositoryOptions.repositoryName,
+          ref: ref,
+        },
       },
       {
         cache: false, // must not use cache, so we always get the branch's current head
