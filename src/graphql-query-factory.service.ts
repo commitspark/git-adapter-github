@@ -70,7 +70,7 @@ export class GraphqlQueryFactoryService {
 
   public createLatestCommitQuery(): string {
     return `
-      query Content ($repositoryOwner: String!, $repositoryName: String!, $ref: String!) { 
+      query ($repositoryOwner: String!, $repositoryName: String!, $ref: String!) { 
         repository(owner: $repositoryOwner, name: $repositoryName) {
           ref(qualifiedName: $ref) {
             target {

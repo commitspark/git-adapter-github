@@ -19,7 +19,7 @@
     "lint": "eslint \"{src,tests}/**/*.ts\""
   },
   "dependencies": {
-    "@commitspark/git-adapter": "^0.10.0",
+    "@commitspark/git-adapter": "^0.13.0",
     "axios": "^1.1.3",
     "axios-cache-interceptor": "^0.10.7",
     "buffer": "^6.0.3",

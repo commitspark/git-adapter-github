@@ -1,11 +1,11 @@
-import { ContentEntryDraft, ENTRY_EXTENSION } from '@commitspark/git-adapter'
+import { EntryDraft, ENTRY_EXTENSION } from '@commitspark/git-adapter'
 import { stringify } from 'yaml'
 import { AdditionModel } from './addition.model'
 import { DeletionModel } from './deletion.model'
 
-export class ContentEntriesToActionsConverterService {
+export class EntriesToActionsConverterService {
   convert(
-    contentEntries: ContentEntryDraft[],
+    entryDrafts: EntryDraft[],
     pathEntryFolder: string,
   ): {
     additions: AdditionModel[]
@@ -13,17 +13,17 @@ export class ContentEntriesToActionsConverterService {
   } {
     const additions: AdditionModel[] = []
     const deletions: DeletionModel[] = []
-    contentEntries.forEach((contentEntry) => {
-      const entryPath = `${pathEntryFolder}/${contentEntry.id}${ENTRY_EXTENSION}`
-      if (contentEntry.deletion) {
+    entryDrafts.forEach((entryDraft) => {
+      const entryPath = `${pathEntryFolder}/${entryDraft.id}${ENTRY_EXTENSION}`
+      if (entryDraft.deletion) {
         deletions.push(new DeletionModel(entryPath))
       } else {
         additions.push(
           new AdditionModel(
             entryPath,
             stringify({
-              metadata: contentEntry.metadata,
-              data: contentEntry.data,
+              metadata: entryDraft.metadata,
+              data: entryDraft.data,
             }),
           ),
         )

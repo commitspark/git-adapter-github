@@ -1,8 +1,9 @@
 # Introduction
 
-**[Commitspark](https://commitspark.com) is a workflow-first Content Management System based on Git and GraphQL.**
+[Commitspark](https://commitspark.com) is a set of tools to manage structured data with Git through a GraphQL API.
 
-This repository holds code that implements access to Git repositories hosted on GitHub.
+This repository holds code for a [Commitspark Git adapter](https://github.com/commitspark/git-adapter) that provides
+access to Git repositories hosted on GitHub.
 
 # Usage
 
@@ -15,7 +16,7 @@ the instance. These options are as follows:
 | `repositoryName`      | True     |                                     | GitHub repository name, e.g. `git-adapter-github` |
 | `personalAccessToken` | True     |                                     | GitHub personal access token (see details below)  |
 | `pathSchemaFile`      | False    | `commitspark/schema/schema.graphql` | Path to schema file in repository                 |
-| `pathEntryFolder`     | False    | `commitspark/entries/`              | Path to folder for content entries                |
+| `pathEntryFolder`     | False    | `commitspark/entries/`              | Path to folder for entries                        |
 
 ## Personal Access Token
 

@@ -2,14 +2,14 @@ import { GraphqlQueryFactoryService } from './graphql-query-factory.service'
 import {
   Commit,
   CommitDraft,
-  ContentEntry,
+  Entry,
   GitAdapter,
 } from '@commitspark/git-adapter'
-import { ContentEntriesToActionsConverterService } from './content-entries-to-actions-converter.service'
+import { EntriesToActionsConverterService } from './entries-to-actions-converter.service'
 import { AxiosCacheInstance } from 'axios-cache-interceptor'
 import { GitHubRepositoryOptions } from './index'
 import { PathFactoryService } from './path-factory.service'
-import { ContentEntryFactoryService } from './content-entry-factory.service'
+import { EntryFactoryService } from './entry-factory.service'
 
 export class GitHubAdapterService implements GitAdapter {
   static readonly QUERY_CACHE_SECONDS = 10 * 60
@@ -21,9 +21,9 @@ export class GitHubAdapterService implements GitAdapter {
   constructor(
     private readonly cachedHttpAdapter: AxiosCacheInstance,
     private graphqlQueryFactory: GraphqlQueryFactoryService,
-    private contentEntriesToActionsConverter: ContentEntriesToActionsConverterService,
+    private entriesToActionsConverter: EntriesToActionsConverterService,
     private pathFactory: PathFactoryService,
-    private contentEntryFactory: ContentEntryFactoryService,
+    private entryFactory: EntryFactoryService,
   ) {}
 
   public async setRepositoryOptions(
@@ -32,7 +32,7 @@ export class GitHubAdapterService implements GitAdapter {
     this.gitRepositoryOptions = repositoryOptions
   }
 
-  public async getContentEntries(commitHash: string): Promise<ContentEntry[]> {
+  public async getEntries(commitHash: string): Promise<Entry[]> {
     if (this.gitRepositoryOptions === undefined) {
       throw new Error('Repository options must be set before reading')
     }
@@ -64,7 +64,7 @@ export class GitHubAdapterService implements GitAdapter {
       return []
     }
 
-    return this.contentEntryFactory.createFromBlobsQueryResponseData(
+    return this.entryFactory.createFromBlobsQueryResponseData(
       filesContentResponse.data.data.repository.object.entries,
     )
   }
@@ -163,11 +163,10 @@ export class GitHubAdapterService implements GitAdapter {
       this.gitRepositoryOptions,
     )
 
-    const { additions, deletions } =
-      this.contentEntriesToActionsConverter.convert(
-        commitDraft.contentEntries,
-        pathEntryFolder,
-      )
+    const { additions, deletions } = this.entriesToActionsConverter.convert(
+      commitDraft.entries,
+      pathEntryFolder,
+    )
 
     const mutateCommit = this.graphqlQueryFactory.createCommitMutation()
     const response: any = await this.cachedHttpAdapter.post(
