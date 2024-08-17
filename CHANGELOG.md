@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - Upgrade to `@commitspark/git-adapter` 0.13.0
+- Upgrade dependencies
 
 ## [0.5.0] - 2023-12-12
 ### Changed
