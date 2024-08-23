@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Rename Git repository option `personalAccessToken` to `accessToken` to better reflect range of usable tokens
+- Upgrade dependencies
 
 ## [0.6.0] - 2024-08-17
 
