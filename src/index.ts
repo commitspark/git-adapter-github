@@ -6,7 +6,7 @@ export { GitHubAdapterService } from './git-hub-adapter.service'
 export interface GitHubRepositoryOptions extends GitRepositoryOptions {
   repositoryOwner: string
   repositoryName: string
-  personalAccessToken: string
+  accessToken: string
   pathSchemaFile?: string
   pathEntryFolder?: string
 }

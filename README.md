@@ -10,32 +10,48 @@ access to Git repositories hosted on GitHub.
 Instantiate the adapter with `createAdapter()` and then call `setRepositoryOptions()` with `GitHubRepositoryOptions` on
 the instance. These options are as follows:
 
-| Option name           | Required | Default value                       | Description                                       |
-|-----------------------|----------|-------------------------------------|---------------------------------------------------|
-| `repositoryOwner`     | True     |                                     | GitHub repository owner, e.g. `commitspark`       |
-| `repositoryName`      | True     |                                     | GitHub repository name, e.g. `git-adapter-github` |
-| `personalAccessToken` | True     |                                     | GitHub personal access token (see details below)  |
-| `pathSchemaFile`      | False    | `commitspark/schema/schema.graphql` | Path to schema file in repository                 |
-| `pathEntryFolder`     | False    | `commitspark/entries/`              | Path to folder for entries                        |
+| Option name       | Required | Default value                       | Description                                       |
+|-------------------|----------|-------------------------------------|---------------------------------------------------|
+| `repositoryOwner` | True     |                                     | GitHub repository owner, e.g. `commitspark`       |
+| `repositoryName`  | True     |                                     | GitHub repository name, e.g. `git-adapter-github` |
+| `accessToken`     | True     |                                     | GitHub access token (see details below)           |
+| `pathSchemaFile`  | False    | `commitspark/schema/schema.graphql` | Path to schema file in repository                 |
+| `pathEntryFolder` | False    | `commitspark/entries/`              | Path to folder for entries                        |
 
-## Personal Access Token
+## Access Token
 
-Both "Tokens (classic)" and "Fine-grained tokens" are supported.
-See
-the [GitHub documentation](https://docs.github.com/en/graphql/guides/forming-calls-with-graphql#authenticating-with-graphql).
+An `accessToken` may be any one of the following types of tokens:
 
-### Tokens (classic)
+### Personal Access Tokens (classic)
 
-A token with `repo` scope is required.
+A [personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
+with `repo` scope is required.
 
-### Fine-grained tokens
+### Fine-grained Personal Access Tokens
 
-A token with the following repository permissions is required for read-only access:
+For read-only access,
+a [fine-grained personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
+with the following repository permissions is sufficient:
 
 | Permission | Access    |
 |------------|-----------|
 | Contents   | Read-only |
 | Metadata   | Read-only |
+
+For write-access, permissions must be as follows:
+
+| Permission | Access         |
+|------------|----------------|
+| Contents   | Read and write |
+| Metadata   | Read-only      |
+
+In both cases, ensure the fine-grained permissions you give actually apply to the repository you want to work with.
+
+### OAuth Tokens
+
+Access tokens for a user obtained
+from an [OAuth app](https://docs.github.com/en/apps/oauth-apps/using-oauth-apps/authorizing-oauth-apps) can be used in
+the same way (including permissions) as fine-grained personal access tokens.
 
 # License
 

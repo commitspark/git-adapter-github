@@ -37,7 +37,7 @@ export class GitHubAdapterService implements GitAdapter {
       throw new Error('Repository options must be set before reading')
     }
 
-    const token = this.gitRepositoryOptions.personalAccessToken
+    const token = this.gitRepositoryOptions.accessToken
     const pathEntryFolder = this.pathFactory.getPathEntryFolder(
       this.gitRepositoryOptions,
     )
@@ -76,7 +76,7 @@ export class GitHubAdapterService implements GitAdapter {
 
     const repositoryOwner = this.gitRepositoryOptions.repositoryOwner
     const repositoryName = this.gitRepositoryOptions.repositoryName
-    const token = this.gitRepositoryOptions.personalAccessToken
+    const token = this.gitRepositoryOptions.accessToken
     const schemaFilePath = this.pathFactory.getPathSchema(
       this.gitRepositoryOptions,
     )
@@ -114,7 +114,7 @@ export class GitHubAdapterService implements GitAdapter {
       throw new Error('Repository options must be set before reading')
     }
 
-    const token = this.gitRepositoryOptions.personalAccessToken
+    const token = this.gitRepositoryOptions.accessToken
 
     const queryLatestCommit = this.graphqlQueryFactory.createLatestCommitQuery()
 
@@ -158,7 +158,7 @@ export class GitHubAdapterService implements GitAdapter {
       throw new Error('Repository options must be set before committing')
     }
 
-    const token = this.gitRepositoryOptions.personalAccessToken
+    const token = this.gitRepositoryOptions.accessToken
     const pathEntryFolder = this.pathFactory.getPathEntryFolder(
       this.gitRepositoryOptions,
     )
