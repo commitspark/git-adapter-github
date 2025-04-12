@@ -1,5 +1,3 @@
-import { Buffer } from 'buffer'
-
 export class AdditionModel {
   readonly contents: string
   constructor(
