@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix missing request cache separation for different authorization headers
 
+### Changed
+
+- Upgrade dependencies
+
 ## [0.8.1]
 
 ### Fixed
