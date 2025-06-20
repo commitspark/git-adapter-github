@@ -6,7 +6,7 @@ import {
   GitAdapter,
 } from '@commitspark/git-adapter'
 import { EntriesToActionsConverterService } from './entries-to-actions-converter.service'
-import { AxiosCacheInstance } from 'axios-cache-interceptor'
+import { AxiosCacheInstance, CacheAxiosResponse } from 'axios-cache-interceptor'
 import { GitHubRepositoryOptions } from './index'
 import { PathFactoryService } from './path-factory.service'
 import { EntryFactoryService } from './entry-factory.service'
@@ -169,7 +169,7 @@ export class GitHubAdapterService implements GitAdapter {
     )
 
     const mutateCommit = this.graphqlQueryFactory.createCommitMutation()
-    const response: any = await this.cachedHttpAdapter.post(
+    const response: CacheAxiosResponse = await this.cachedHttpAdapter.post(
       GitHubAdapterService.API_URL,
       {
         query: mutateCommit,
