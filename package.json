@@ -1,7 +1,7 @@
 {
   "name": "@commitspark/git-adapter-github",
   "description": "Adapter that provides GitHub repository access to Commitspark",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "license": "ISC",
   "private": false,
   "files": [
