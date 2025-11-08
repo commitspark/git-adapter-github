@@ -1,4 +1,4 @@
-import { AdditionModel } from '../../src/addition.model'
+import { AdditionModel } from '../../../src/model/addition.model'
 
 describe('AdditionModel', () => {
   it('should base64-encode content', async () => {

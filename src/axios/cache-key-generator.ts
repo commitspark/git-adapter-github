@@ -1,6 +1,6 @@
 import { CacheRequestConfig } from 'axios-cache-interceptor'
 
-const axiosCacheKeyGenerator = <R = unknown, D = unknown>(
+export const cacheKeyGenerator = <R = unknown, D = unknown>(
   request: CacheRequestConfig<R, D>,
 ) => {
   const authorization = request.headers?.authorization
@@ -18,5 +18,3 @@ const axiosCacheKeyGenerator = <R = unknown, D = unknown>(
 
   return key
 }
-
-export { axiosCacheKeyGenerator }

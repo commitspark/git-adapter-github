@@ -5,10 +5,15 @@
 This repository holds code for a [Commitspark Git adapter](https://github.com/commitspark/git-adapter) that provides
 access to Git repositories hosted on GitHub.
 
+# Installation
+
+```shell
+npm i @commitspark/git-adapter-github
+```
+
 # Usage
 
-Instantiate the adapter with `createAdapter()` and then call `setRepositoryOptions()` with `GitHubRepositoryOptions` on
-the instance. These options are as follows:
+Instantiate the adapter with `createAdapter()`, providing `GitHubRepositoryOptions` with the following parameters:
 
 | Option name       | Required | Default value                       | Description                                       |
 |-------------------|----------|-------------------------------------|---------------------------------------------------|
@@ -52,6 +57,23 @@ In both cases, ensure the fine-grained permissions you give actually apply to th
 Access tokens for a user obtained
 from an [OAuth app](https://docs.github.com/en/apps/oauth-apps/using-oauth-apps/authorizing-oauth-apps) can be used in
 the same way (including permissions) as fine-grained personal access tokens.
+
+# Example
+
+To use this adapter together with the Commitspark GraphQL API library, your code could be the following:
+
+```typescript
+import { createAdapter } from '@commitspark/git-adapter-github'
+import { createClient } from '@commitspark/graphql-api'
+
+const gitHubAdapter = createAdapter({
+  repositoryOwner: process.env.GITHUB_REPOSITORY_OWNER,
+  repositoryName: process.env.GITHUB_REPOSITORY_NAME,
+  accessToken: process.env.GITHUB_ACCESS_TOKEN,
+})
+
+const client = await createClient(gitHubAdapter)
+```
 
 # License
 
