@@ -58,6 +58,45 @@ Access tokens for a user obtained
 from an [OAuth app](https://docs.github.com/en/apps/oauth-apps/using-oauth-apps/authorizing-oauth-apps) can be used in
 the same way (including permissions) as fine-grained personal access tokens.
 
+## Error Handling
+
+This adapter sends requests to the GitHub GraphQL API. In case a request fails, HTTP and GraphQL errors are mapped to
+`GitAdapterError` exceptions with `ErrorCode` values from the `@commitspark/git-adapter` package. This enables the
+[Commitspark GraphQL API library](https://github.com/commitspark/graphql-api) to handle adapter errors in an
+adapter-agnostic way.
+
+### HTTP Status Code Mapping
+
+HTTP error status codes are mapped as follows:
+
+| HTTP Status | GitAdapter ErrorCode |
+|-------------|----------------------|
+| 400         | `BAD_REQUEST`        |
+| 401         | `UNAUTHORIZED`       |
+| 403         | `FORBIDDEN`          |
+| 404         | `NOT_FOUND`          |
+| 409         | `CONFLICT`           |
+| 429         | `TOO_MANY_REQUESTS`  |
+| Other       | `INTERNAL_ERROR`     |
+
+### GitHub GraphQL API Error Type Mapping
+
+GitHub GraphQL API error types are mapped as follows:
+
+| GitHub Error Type | GitAdapter ErrorCode |
+|-------------------|----------------------|
+| `NOT_FOUND`       | `NOT_FOUND`          |
+| `RATE_LIMITED`    | `TOO_MANY_REQUESTS`  |
+| `FORBIDDEN`       | `FORBIDDEN`          |
+| `STALE_DATA`      | `CONFLICT`           |
+| Other             | `INTERNAL_ERROR`     |
+
+All errors include the original error message from GitHub for debugging purposes.
+
+As GitHub GraphQL error types (codes) are not documented (see
+[GitHub documentation issue #22607](https://github.com/github/docs/issues/22607)), mapping of GraphQL error types is
+done on a best-effort basis.
+
 # Example
 
 To use this adapter together with the Commitspark GraphQL API library, your code could be the following:
