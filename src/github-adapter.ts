@@ -1,5 +1,11 @@
 import { AxiosCacheInstance, CacheAxiosResponse } from 'axios-cache-interceptor'
-import { Commit, CommitDraft, Entry } from '@commitspark/git-adapter'
+import {
+  Commit,
+  CommitDraft,
+  Entry,
+  ErrorCode,
+  GitAdapterError,
+} from '@commitspark/git-adapter'
 import { GitHubRepositoryOptions } from './index'
 import {
   createBlobContentQuery,
@@ -10,6 +16,7 @@ import {
 import { convertEntriesToActions } from './util/entries-to-actions-converter'
 import { getPathEntryFolder, getPathSchema } from './util/path-factory'
 import { createEntriesFromBlobsQueryResponseData } from './util/entry-factory'
+import { handleHttpErrors, handleGraphQLErrors } from './errors'
 
 export const API_URL = 'https://api.github.com/graphql'
 
@@ -22,22 +29,37 @@ export const getEntries = async (
   const pathEntryFolder = getPathEntryFolder(gitRepositoryOptions)
 
   const queryFilesContent = createBlobsContentQuery()
-  const filesContentResponse = await axiosCacheInstance.post(
-    API_URL,
-    {
-      query: queryFilesContent,
-      variables: {
-        repositoryOwner: gitRepositoryOptions.repositoryOwner,
-        repositoryName: gitRepositoryOptions.repositoryName,
-        expression: `${commitHash}:${pathEntryFolder}`,
+
+  let filesContentResponse: CacheAxiosResponse | undefined
+  try {
+    filesContentResponse = await axiosCacheInstance.post(
+      API_URL,
+      {
+        query: queryFilesContent,
+        variables: {
+          repositoryOwner: gitRepositoryOptions.repositoryOwner,
+          repositoryName: gitRepositoryOptions.repositoryName,
+          expression: `${commitHash}:${pathEntryFolder}`,
+        },
       },
-    },
-    {
-      headers: {
-        authorization: `Bearer ${token}`,
+      {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
       },
-    },
-  )
+    )
+  } catch (error) {
+    handleHttpErrors(error)
+  }
+
+  if (!filesContentResponse) {
+    throw new GitAdapterError(
+      ErrorCode.INTERNAL_ERROR,
+      'Failed to fetch entries',
+    )
+  }
+
+  handleGraphQLErrors(filesContentResponse)
 
   if (!filesContentResponse.data.data.repository?.object?.entries) {
     return []
@@ -59,26 +81,43 @@ export const getSchema = async (
   const schemaFilePath = getPathSchema(gitRepositoryOptions)
 
   const queryContent = createBlobContentQuery()
-  const response = await axiosCacheInstance.post(
-    API_URL,
-    {
-      query: queryContent,
-      variables: {
-        repositoryOwner: repositoryOwner,
-        repositoryName: repositoryName,
-        expression: `${commitHash}:${schemaFilePath}`,
+
+  let response: CacheAxiosResponse | undefined
+  try {
+    response = await axiosCacheInstance.post(
+      API_URL,
+      {
+        query: queryContent,
+        variables: {
+          repositoryOwner: repositoryOwner,
+          repositoryName: repositoryName,
+          expression: `${commitHash}:${schemaFilePath}`,
+        },
       },
-    },
-    {
-      headers: {
-        authorization: `Bearer ${token}`,
+      {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
       },
-    },
-  )
+    )
+  } catch (error) {
+    handleHttpErrors(error)
+  }
+
+  if (!response) {
+    throw new GitAdapterError(
+      ErrorCode.INTERNAL_ERROR,
+      `Failed to fetch schema`,
+    )
+  }
+
+  handleGraphQLErrors(response)
+
   const schema = response.data?.data?.repository?.object?.text
 
   if (!schema) {
-    throw new Error(
+    throw new GitAdapterError(
+      ErrorCode.NOT_FOUND,
       `"${schemaFilePath}" not found in Git repository "${repositoryOwner}/${repositoryName}" at commit "${commitHash}"`,
     )
   }
@@ -95,26 +134,40 @@ export const getLatestCommitHash = async (
 
   const queryLatestCommit = createLatestCommitQuery()
 
-  const response = await axiosCacheInstance.post(
-    API_URL,
-    {
-      query: queryLatestCommit,
-      variables: {
-        repositoryOwner: gitRepositoryOptions.repositoryOwner,
-        repositoryName: gitRepositoryOptions.repositoryName,
-        ref: ref,
+  let response: CacheAxiosResponse | undefined
+  try {
+    response = await axiosCacheInstance.post(
+      API_URL,
+      {
+        query: queryLatestCommit,
+        variables: {
+          repositoryOwner: gitRepositoryOptions.repositoryOwner,
+          repositoryName: gitRepositoryOptions.repositoryName,
+          ref: ref,
+        },
       },
-    },
-    {
-      cache: false, // must not use cache, so we always get the branch's current head
-      headers: {
-        authorization: `Bearer ${token}`,
+      {
+        cache: false, // must not use cache, so we always get the branch's current head
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
       },
-    },
-  )
+    )
+  } catch (error) {
+    handleHttpErrors(error)
+  }
+
+  if (!response) {
+    throw new GitAdapterError(
+      ErrorCode.INTERNAL_ERROR,
+      'Failed to fetch latest commit',
+    )
+  }
+  handleGraphQLErrors(response)
 
   if (!response.data.data.repository) {
-    throw new Error(
+    throw new GitAdapterError(
+      ErrorCode.NOT_FOUND,
       `No repository found "${gitRepositoryOptions.repositoryOwner}/${gitRepositoryOptions.repositoryName}"`,
     )
   }
@@ -124,7 +177,10 @@ export const getLatestCommitHash = async (
     response.data.data.repository.object?.oid ??
     undefined
   if (!lastCommit) {
-    throw new Error(`No commit found for ref "${ref}"`)
+    throw new GitAdapterError(
+      ErrorCode.NOT_FOUND,
+      `No commit found for ref "${ref}"`,
+    )
   }
 
   return lastCommit
@@ -144,35 +200,50 @@ export const createCommit = async (
   )
 
   const mutateCommit = createCommitMutation()
-  const response: CacheAxiosResponse = await axiosCacheInstance.post(
-    API_URL,
-    {
-      query: mutateCommit,
-      variables: {
-        repositoryNameWithOwner: `${gitRepositoryOptions.repositoryOwner}/${gitRepositoryOptions.repositoryName}`,
-        branchName: commitDraft.ref,
-        commitMessage: commitDraft.message ?? '-',
-        precedingCommitSha: commitDraft.parentSha,
-        additions: additions,
-        deletions: deletions,
-      },
-    },
-    {
-      cache: false,
-      headers: {
-        authorization: `Bearer ${token}`,
-      },
-    },
-  )
 
-  if (response.data.errors) {
-    throw new Error(JSON.stringify(response.data.errors))
+  let response: CacheAxiosResponse | undefined
+  try {
+    response = await axiosCacheInstance.post(
+      API_URL,
+      {
+        query: mutateCommit,
+        variables: {
+          repositoryNameWithOwner: `${gitRepositoryOptions.repositoryOwner}/${gitRepositoryOptions.repositoryName}`,
+          branchName: commitDraft.ref,
+          commitMessage: commitDraft.message ?? '-',
+          precedingCommitSha: commitDraft.parentSha,
+          additions: additions,
+          deletions: deletions,
+        },
+      },
+      {
+        cache: false,
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+      },
+    )
+  } catch (error) {
+    handleHttpErrors(error)
   }
+
+  if (!response) {
+    throw new GitAdapterError(
+      ErrorCode.INTERNAL_ERROR,
+      `Failed to create commit`,
+    )
+  }
+
+  handleGraphQLErrors(response)
 
   const mutationResult = response.data.data.commitCreate
 
   if (mutationResult.errors) {
-    throw new Error(JSON.stringify(mutationResult.errors))
+    const errorMessage = JSON.stringify(mutationResult.errors)
+    throw new GitAdapterError(
+      ErrorCode.BAD_REQUEST,
+      `Failed to create commit: ${errorMessage}`,
+    )
   }
 
   return { ref: mutationResult.commit.oid }
