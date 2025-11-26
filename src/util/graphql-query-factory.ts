@@ -3,13 +3,27 @@ export function createBlobsContentQuery(): string {
       query ($repositoryOwner: String!, $repositoryName: String!, $expression: String!) { 
         repository(owner: $repositoryOwner, name: $repositoryName) {
           object(expression: $expression) {
+            ... on Blob {
+              text
+            }
+          }
+        }
+      }
+    `
+}
+
+export function createBlobIdsQuery(): string {
+  return `
+      query ($repositoryOwner: String!, $repositoryName: String!, $expression: String!) { 
+        repository(owner: $repositoryOwner, name: $repositoryName) {
+          object(expression: $expression) {
             ... on Tree {
               entries {
                 name
                 object {
                   __typename
                   ... on Blob {
-                    text
+                    id
                   }
                 }
               }
@@ -20,14 +34,13 @@ export function createBlobsContentQuery(): string {
     `
 }
 
-export function createBlobContentQuery(): string {
+export function createBlobsContentByIdsQuery(): string {
   return `
-      query ($repositoryOwner: String!, $repositoryName: String!, $expression: String!) { 
-        repository(owner: $repositoryOwner, name: $repositoryName) {
-          object(expression: $expression) {
-            ... on Blob {
-              text
-            }
+      query ($ids: [ID!]!) {
+        nodes(ids: $ids) {
+          ... on Blob {
+            id
+            text
           }
         }
       }

@@ -8,8 +8,9 @@ import {
 } from '@commitspark/git-adapter'
 import { GitHubRepositoryOptions } from './index'
 import {
-  createBlobContentQuery,
   createBlobsContentQuery,
+  createBlobIdsQuery,
+  createBlobsContentByIdsQuery,
   createCommitMutation,
   createLatestCommitQuery,
 } from './util/graphql-query-factory'
@@ -28,14 +29,15 @@ export const getEntries = async (
   const token = gitRepositoryOptions.accessToken
   const pathEntryFolder = getPathEntryFolder(gitRepositoryOptions)
 
-  const queryFilesContent = createBlobsContentQuery()
+  // 1. Fetch Tree Entries (Metadata only: IDs and Names)
+  const queryBlobIds = createBlobIdsQuery()
 
-  let filesContentResponse: CacheAxiosResponse | undefined
+  let blobIdsResponse: CacheAxiosResponse | undefined
   try {
-    filesContentResponse = await axiosCacheInstance.post(
+    blobIdsResponse = await axiosCacheInstance.post(
       API_URL,
       {
-        query: queryFilesContent,
+        query: queryBlobIds,
         variables: {
           repositoryOwner: gitRepositoryOptions.repositoryOwner,
           repositoryName: gitRepositoryOptions.repositoryName,
@@ -52,22 +54,86 @@ export const getEntries = async (
     handleHttpErrors(error)
   }
 
-  if (!filesContentResponse) {
+  if (!blobIdsResponse) {
     throw new GitAdapterError(
       ErrorCode.INTERNAL_ERROR,
-      'Failed to fetch entries',
+      'Failed to fetch GitHub blob IDs that allow querying entry data',
     )
   }
 
-  handleGraphQLErrors(filesContentResponse)
+  handleGraphQLErrors(blobIdsResponse)
 
-  if (!filesContentResponse.data.data.repository?.object?.entries) {
+  const blobData = blobIdsResponse.data.data.repository?.object?.entries
+
+  if (!blobData || !Array.isArray(blobData)) {
     return []
   }
 
-  return createEntriesFromBlobsQueryResponseData(
-    filesContentResponse.data.data.repository.object.entries,
+  const entries = blobData.filter(
+    (entry) =>
+      entry.object && entry.object.__typename === 'Blob' && entry.object.id,
   )
+
+  // 2. Collect Blob IDs for batch fetching
+  const blobIds: string[] = entries.map((entry) => entry.object.id)
+  // for (const entry of entries) {
+  //   if (entry.object && entry.object.__typename === 'Blob' && entry.object.id) {
+  //     blobIds.push(entry.object.id)
+  //   }
+  // }
+  console.log('ids: ', blobIds)
+
+  // 3. Fetch Content in Batches (Pagination)
+  const BATCH_SIZE = 100 // GitHub's node limit
+  const blobContentMap = new Map<string, string | null>()
+
+  const queryContent = createBlobsContentByIdsQuery()
+  const requestPromises = []
+  for (let i = 0; i < blobIds.length; i += BATCH_SIZE) {
+    const batchIds = blobIds.slice(i, i + BATCH_SIZE)
+
+    let contentResponse: CacheAxiosResponse | undefined
+    try {
+      requestPromises.push(
+        axiosCacheInstance
+          .post(
+            API_URL,
+            {
+              query: queryContent,
+              variables: {
+                ids: batchIds,
+              },
+            },
+            {
+              headers: {
+                authorization: `Bearer ${token}`,
+              },
+            },
+          )
+          .then((contentResponse) => {
+            handleGraphQLErrors(contentResponse)
+            const nodes = contentResponse.data.data.nodes
+            if (nodes) {
+              nodes.forEach((node: any) => {
+                if (node && node.id) {
+                  blobContentMap.set(node.id, node.text)
+                }
+              })
+            }
+          }),
+      )
+    } catch (error) {
+      handleHttpErrors(error)
+    }
+  }
+  await Promise.all(requestPromises)
+
+  // 4. Merge content back into entries structure
+  for (const entry of entries) {
+    entry.object.text = blobContentMap.get(entry.object.id)
+  }
+
+  return createEntriesFromBlobsQueryResponseData(entries)
 }
 
 export const getSchema = async (
@@ -80,7 +146,7 @@ export const getSchema = async (
   const token = gitRepositoryOptions.accessToken
   const schemaFilePath = getPathSchema(gitRepositoryOptions)
 
-  const queryContent = createBlobContentQuery()
+  const queryContent = createBlobsContentQuery()
 
   let response: CacheAxiosResponse | undefined
   try {
