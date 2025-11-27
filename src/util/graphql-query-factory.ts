@@ -12,7 +12,7 @@ export function createBlobsContentQuery(): string {
     `
 }
 
-export function createBlobIdsQuery(): string {
+export function createFilenamesQuery(): string {
   return `
       query ($repositoryOwner: String!, $repositoryName: String!, $expression: String!) { 
         repository(owner: $repositoryOwner, name: $repositoryName) {
@@ -20,12 +20,6 @@ export function createBlobIdsQuery(): string {
             ... on Tree {
               entries {
                 name
-                object {
-                  __typename
-                  ... on Blob {
-                    id
-                  }
-                }
               }
             }
           }
@@ -34,17 +28,41 @@ export function createBlobIdsQuery(): string {
     `
 }
 
-export function createBlobsContentByIdsQuery(): string {
-  return `
-      query ($ids: [ID!]!) {
-        nodes(ids: $ids) {
-          ... on Blob {
-            id
-            text
-          }
+export function createBlobsContentByFilenamesQuery(
+  folderExpression: string,
+  filenames: string[],
+  batchSize: number,
+): { queries: string[]; queryFilenameAliasMap: Map<string, string> } {
+  const queries = []
+  const queryFilenameAliasMap = new Map<string, string>()
+  for (
+    let fileIndex = 0;
+    fileIndex < filenames.length;
+    fileIndex += batchSize
+  ) {
+    const batchFilenames = filenames.slice(fileIndex, fileIndex + batchSize)
+
+    let query = `
+      query ($repositoryOwner: String!, $repositoryName: String!) { 
+        repository(owner: $repositoryOwner, name: $repositoryName) {`
+
+    for (const [j, filename] of batchFilenames.entries()) {
+      const fileAliasIndex = fileIndex + j
+      const queryFileAlias = `file${fileAliasIndex}`
+      query += `    ${queryFileAlias}: object(expression: "${folderExpression}/${filename}") {
+      ... on Blob {
+          text
         }
       }
-    `
+`
+      queryFilenameAliasMap.set(queryFileAlias, filename)
+    }
+    query += `  }
+}`
+    queries.push(query)
+  }
+
+  return { queries, queryFilenameAliasMap }
 }
 
 export function createCommitMutation(): string {

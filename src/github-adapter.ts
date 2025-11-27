@@ -8,16 +8,17 @@ import {
 } from '@commitspark/git-adapter'
 import { GitHubRepositoryOptions } from './index'
 import {
+  createBlobsContentByFilenamesQuery,
   createBlobsContentQuery,
-  createBlobIdsQuery,
-  createBlobsContentByIdsQuery,
   createCommitMutation,
+  createFilenamesQuery,
   createLatestCommitQuery,
 } from './util/graphql-query-factory'
 import { convertEntriesToActions } from './util/entries-to-actions-converter'
 import { getPathEntryFolder, getPathSchema } from './util/path-factory'
 import { createEntriesFromBlobsQueryResponseData } from './util/entry-factory'
-import { handleHttpErrors, handleGraphQLErrors } from './errors'
+import { handleGraphQLErrors, handleHttpErrors } from './errors'
+import { QUERY_BATCH_SIZE } from './util/types'
 
 export const API_URL = 'https://api.github.com/graphql'
 
@@ -28,20 +29,19 @@ export const getEntries = async (
 ): Promise<Entry[]> => {
   const token = gitRepositoryOptions.accessToken
   const pathEntryFolder = getPathEntryFolder(gitRepositoryOptions)
+  const folderExpression = `${commitHash}:${pathEntryFolder}`
 
-  // 1. Fetch Tree Entries (Metadata only: IDs and Names)
-  const queryBlobIds = createBlobIdsQuery()
-
-  let blobIdsResponse: CacheAxiosResponse | undefined
+  const filenamesQuery = createFilenamesQuery()
+  let filenamesResponse: CacheAxiosResponse | undefined
   try {
-    blobIdsResponse = await axiosCacheInstance.post(
+    filenamesResponse = await axiosCacheInstance.post(
       API_URL,
       {
-        query: queryBlobIds,
+        query: filenamesQuery,
         variables: {
           repositoryOwner: gitRepositoryOptions.repositoryOwner,
           repositoryName: gitRepositoryOptions.repositoryName,
-          expression: `${commitHash}:${pathEntryFolder}`,
+          expression: folderExpression,
         },
       },
       {
@@ -54,54 +54,41 @@ export const getEntries = async (
     handleHttpErrors(error)
   }
 
-  if (!blobIdsResponse) {
+  if (!filenamesResponse) {
     throw new GitAdapterError(
       ErrorCode.INTERNAL_ERROR,
-      'Failed to fetch GitHub blob IDs that allow querying entry data',
+      'Failed to fetch entry filenames',
     )
   }
 
-  handleGraphQLErrors(blobIdsResponse)
+  handleGraphQLErrors(filenamesResponse)
 
-  const blobData = blobIdsResponse.data.data.repository?.object?.entries
-
-  if (!blobData || !Array.isArray(blobData)) {
+  const entries = filenamesResponse.data.data.repository?.object?.entries
+  if (!entries || !Array.isArray(entries)) {
     return []
   }
 
-  const entries = blobData.filter(
-    (entry) =>
-      entry.object && entry.object.__typename === 'Blob' && entry.object.id,
+  const filenames: string[] = entries.map((entry) => entry.name)
+
+  const filenameContentMap = new Map<string, string>()
+
+  const { queries, queryFilenameAliasMap } = createBlobsContentByFilenamesQuery(
+    folderExpression,
+    filenames,
+    QUERY_BATCH_SIZE,
   )
-
-  // 2. Collect Blob IDs for batch fetching
-  const blobIds: string[] = entries.map((entry) => entry.object.id)
-  // for (const entry of entries) {
-  //   if (entry.object && entry.object.__typename === 'Blob' && entry.object.id) {
-  //     blobIds.push(entry.object.id)
-  //   }
-  // }
-  console.log('ids: ', blobIds)
-
-  // 3. Fetch Content in Batches (Pagination)
-  const BATCH_SIZE = 100 // GitHub's node limit
-  const blobContentMap = new Map<string, string | null>()
-
-  const queryContent = createBlobsContentByIdsQuery()
   const requestPromises = []
-  for (let i = 0; i < blobIds.length; i += BATCH_SIZE) {
-    const batchIds = blobIds.slice(i, i + BATCH_SIZE)
-
-    let contentResponse: CacheAxiosResponse | undefined
+  for (const contentQuery of queries) {
     try {
       requestPromises.push(
         axiosCacheInstance
           .post(
             API_URL,
             {
-              query: queryContent,
+              query: contentQuery,
               variables: {
-                ids: batchIds,
+                repositoryOwner: gitRepositoryOptions.repositoryOwner,
+                repositoryName: gitRepositoryOptions.repositoryName,
               },
             },
             {
@@ -112,13 +99,16 @@ export const getEntries = async (
           )
           .then((contentResponse) => {
             handleGraphQLErrors(contentResponse)
-            const nodes = contentResponse.data.data.nodes
-            if (nodes) {
-              nodes.forEach((node: any) => {
-                if (node && node.id) {
-                  blobContentMap.set(node.id, node.text)
-                }
-              })
+            const files = contentResponse.data.data.repository as Record<
+              string,
+              { text: string }
+            >
+
+            for (const [queryAlias, fileObject] of Object.entries(files)) {
+              filenameContentMap.set(
+                queryFilenameAliasMap.get(queryAlias) as string,
+                fileObject.text,
+              )
             }
           }),
       )
@@ -128,12 +118,7 @@ export const getEntries = async (
   }
   await Promise.all(requestPromises)
 
-  // 4. Merge content back into entries structure
-  for (const entry of entries) {
-    entry.object.text = blobContentMap.get(entry.object.id)
-  }
-
-  return createEntriesFromBlobsQueryResponseData(entries)
+  return createEntriesFromBlobsQueryResponseData(filenameContentMap)
 }
 
 export const getSchema = async (

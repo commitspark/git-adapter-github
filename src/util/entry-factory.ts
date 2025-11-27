@@ -2,29 +2,14 @@ import { parse } from 'yaml'
 import { Entry } from '@commitspark/git-adapter'
 import { ENTRY_EXTENSION } from './types'
 
-interface TreeEntry {
-  name: string
-  object: {
-    __typename: string
-    text: string
-  }
-}
-
 export function createEntriesFromBlobsQueryResponseData(
-  entries: TreeEntry[],
+  filenameContentMap: Map<string, string>,
 ): Entry[] {
-  return entries
-    .filter(
-      (entry: TreeEntry) =>
-        entry.name.endsWith(ENTRY_EXTENSION) &&
-        entry.object['__typename'] === 'Blob',
-    )
-    .map((entry: TreeEntry) => {
-      const fileContent = parse(entry.object.text)
-      const id = entry.name.substring(
-        0,
-        entry.name.length - ENTRY_EXTENSION.length,
-      )
+  return Array.from(filenameContentMap)
+    .filter(([filename]) => filename.endsWith(ENTRY_EXTENSION))
+    .map(([filename, content]) => {
+      const fileContent = parse(content)
+      const id = filename.substring(0, filename.length - ENTRY_EXTENSION.length)
       return {
         id: id,
         metadata: fileContent.metadata,
