@@ -36,6 +36,7 @@ export const getEntryContent = async (
               headers: {
                 authorization: `Bearer ${gitRepositoryOptions.accessToken}`,
               },
+              timeout: 30000,
             },
           )
           .then((contentResponse) =>

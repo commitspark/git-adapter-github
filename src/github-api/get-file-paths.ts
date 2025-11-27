@@ -25,6 +25,7 @@ export const getFilePaths = async (
         Authorization: `Bearer ${accessToken}`,
         Accept: 'application/vnd.github+json',
       },
+      timeout: 30000,
     })
   } catch (error) {
     handleHttpErrors(error)
