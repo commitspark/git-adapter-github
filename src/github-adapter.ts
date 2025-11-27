@@ -8,117 +8,37 @@ import {
 } from '@commitspark/git-adapter'
 import { GitHubRepositoryOptions } from './index'
 import {
-  createBlobsContentByFilenamesQuery,
   createBlobsContentQuery,
   createCommitMutation,
-  createFilenamesQuery,
   createLatestCommitQuery,
-} from './util/graphql-query-factory'
+} from './github-api/graphql-query-factory'
 import { convertEntriesToActions } from './util/entries-to-actions-converter'
 import { getPathEntryFolder, getPathSchema } from './util/path-factory'
-import { createEntriesFromBlobsQueryResponseData } from './util/entry-factory'
+import { createEntriesFromFileContent } from './util/entry-factory'
 import { handleGraphQLErrors, handleHttpErrors } from './errors'
-import { QUERY_BATCH_SIZE } from './util/types'
-
-export const API_URL = 'https://api.github.com/graphql'
+import { getEntryContent } from './github-api/get-entry-content'
+import { getFilePaths } from './github-api/get-file-paths'
+import { GITHUB_GRAPHQL_API_URL } from './types'
 
 export const getEntries = async (
   gitRepositoryOptions: GitHubRepositoryOptions,
   axiosCacheInstance: AxiosCacheInstance,
   commitHash: string,
 ): Promise<Entry[]> => {
-  const token = gitRepositoryOptions.accessToken
-  const pathEntryFolder = getPathEntryFolder(gitRepositoryOptions)
-  const folderExpression = `${commitHash}:${pathEntryFolder}`
-
-  const filenamesQuery = createFilenamesQuery()
-  let filenamesResponse: CacheAxiosResponse | undefined
-  try {
-    filenamesResponse = await axiosCacheInstance.post(
-      API_URL,
-      {
-        query: filenamesQuery,
-        variables: {
-          repositoryOwner: gitRepositoryOptions.repositoryOwner,
-          repositoryName: gitRepositoryOptions.repositoryName,
-          expression: folderExpression,
-        },
-      },
-      {
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
-      },
-    )
-  } catch (error) {
-    handleHttpErrors(error)
-  }
-
-  if (!filenamesResponse) {
-    throw new GitAdapterError(
-      ErrorCode.INTERNAL_ERROR,
-      'Failed to fetch entry filenames',
-    )
-  }
-
-  handleGraphQLErrors(filenamesResponse)
-
-  const entries = filenamesResponse.data.data.repository?.object?.entries
-  if (!entries || !Array.isArray(entries)) {
-    return []
-  }
-
-  const filenames: string[] = entries.map((entry) => entry.name)
-
-  const filenameContentMap = new Map<string, string>()
-
-  const { queries, queryFilenameAliasMap } = createBlobsContentByFilenamesQuery(
-    folderExpression,
-    filenames,
-    QUERY_BATCH_SIZE,
+  const filenames: string[] = await getFilePaths(
+    gitRepositoryOptions,
+    axiosCacheInstance,
+    commitHash,
   )
-  const requestPromises = []
-  for (const contentQuery of queries) {
-    try {
-      requestPromises.push(
-        axiosCacheInstance
-          .post(
-            API_URL,
-            {
-              query: contentQuery,
-              variables: {
-                repositoryOwner: gitRepositoryOptions.repositoryOwner,
-                repositoryName: gitRepositoryOptions.repositoryName,
-              },
-            },
-            {
-              headers: {
-                authorization: `Bearer ${token}`,
-              },
-            },
-          )
-          .then((contentResponse) => {
-            handleGraphQLErrors(contentResponse)
-            const files = contentResponse.data.data.repository as Record<
-              string,
-              { text: string }
-            >
 
-            for (const [queryAlias, fileObject] of Object.entries(files)) {
-              filenameContentMap.set(
-                queryFilenameAliasMap.get(queryAlias) as string,
-                fileObject.text,
-              )
-            }
-          }),
-      )
-    } catch (error) {
-      handleHttpErrors(error)
-    }
-  }
-  await Promise.all(requestPromises)
+  const filePathsContentMap = await getEntryContent(
+    gitRepositoryOptions,
+    axiosCacheInstance,
+    commitHash,
+    filenames,
+  )
 
-  return createEntriesFromBlobsQueryResponseData(filenameContentMap)
+  return createEntriesFromFileContent(gitRepositoryOptions, filePathsContentMap)
 }
 
 export const getSchema = async (
@@ -136,7 +56,7 @@ export const getSchema = async (
   let response: CacheAxiosResponse | undefined
   try {
     response = await axiosCacheInstance.post(
-      API_URL,
+      GITHUB_GRAPHQL_API_URL,
       {
         query: queryContent,
         variables: {
@@ -188,7 +108,7 @@ export const getLatestCommitHash = async (
   let response: CacheAxiosResponse | undefined
   try {
     response = await axiosCacheInstance.post(
-      API_URL,
+      GITHUB_GRAPHQL_API_URL,
       {
         query: queryLatestCommit,
         variables: {
@@ -255,7 +175,7 @@ export const createCommit = async (
   let response: CacheAxiosResponse | undefined
   try {
     response = await axiosCacheInstance.post(
-      API_URL,
+      GITHUB_GRAPHQL_API_URL,
       {
         query: mutateCommit,
         variables: {

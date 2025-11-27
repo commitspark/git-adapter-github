@@ -28,19 +28,21 @@ export function createFilenamesQuery(): string {
     `
 }
 
-export function createBlobsContentByFilenamesQuery(
-  folderExpression: string,
-  filenames: string[],
+export function createBlobsContentByFilePathsQuery(
+  filePaths: string[],
+  commitHash: string,
   batchSize: number,
 ): { queries: string[]; queryFilenameAliasMap: Map<string, string> } {
   const queries = []
   const queryFilenameAliasMap = new Map<string, string>()
   for (
     let fileIndex = 0;
-    fileIndex < filenames.length;
+    fileIndex < filePaths.length;
     fileIndex += batchSize
   ) {
-    const batchFilenames = filenames.slice(fileIndex, fileIndex + batchSize)
+    // cut file content query into batches and use GraphQL aliases for maximum throughput in regard to GitHub API limits
+
+    const batchFilenames = filePaths.slice(fileIndex, fileIndex + batchSize)
 
     let query = `
       query ($repositoryOwner: String!, $repositoryName: String!) { 
@@ -49,7 +51,7 @@ export function createBlobsContentByFilenamesQuery(
     for (const [j, filename] of batchFilenames.entries()) {
       const fileAliasIndex = fileIndex + j
       const queryFileAlias = `file${fileAliasIndex}`
-      query += `    ${queryFileAlias}: object(expression: "${folderExpression}/${filename}") {
+      query += `    ${queryFileAlias}: object(expression: "${commitHash}:${filename}") {
       ... on Blob {
           text
         }
