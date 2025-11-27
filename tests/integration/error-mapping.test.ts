@@ -3,10 +3,11 @@ import { AxiosError, AxiosResponse } from 'axios'
 import { ErrorCode, GitAdapterError } from '@commitspark/git-adapter'
 import {
   createCommit,
-  getEntries,
   getLatestCommitHash,
   getSchema,
 } from '../../src/github-adapter'
+import { getEntryContent } from '../../src/github-api/get-entry-content'
+import { getFilePaths } from '../../src/github-api/get-file-paths'
 import { GitHubRepositoryOptions } from '../../src'
 
 describe('Error mapping', () => {
@@ -21,144 +22,136 @@ describe('Error mapping', () => {
   beforeEach(() => {
     mockAxiosInstance = {
       post: jest.fn(),
+      get: jest.fn(),
     } as unknown as jest.Mocked<AxiosCacheInstance>
   })
 
-  describe('getEntries', () => {
-    describe('HTTP error mapping', () => {
-      it('should throw GitAdapterError with NOT_FOUND when axios returns 404', async () => {
-        const axiosError = new AxiosError('Not Found')
-        axiosError.response = {
-          status: 404,
-          data: { message: 'Repository not found' },
-        } as Partial<AxiosResponse> as AxiosResponse
+  describe('getEntryContent', () => {
+    it('should throw GitAdapterError with NOT_FOUND when axios throws 404', async () => {
+      const axiosError = new AxiosError('Not Found')
+      axiosError.response = {
+        status: 404,
+        data: { message: 'Repository not found' },
+      } as Partial<AxiosResponse> as AxiosResponse
 
-        mockAxiosInstance.post.mockRejectedValue(axiosError)
-
-        await expect(
-          getEntries(mockOptions, mockAxiosInstance, 'abc123'),
-        ).rejects.toThrow(
-          new GitAdapterError(ErrorCode.NOT_FOUND, 'Repository not found'),
-        )
+      // Simulate a synchronous throw so getEntryContent's try/catch can map HTTP errors
+      mockAxiosInstance.post.mockImplementation(() => {
+        throw axiosError
       })
+
+      await expect(
+        getEntryContent(mockOptions, mockAxiosInstance, 'abc123', ['file.txt']),
+      ).rejects.toThrow(
+        new GitAdapterError(ErrorCode.NOT_FOUND, 'Repository not found'),
+      )
     })
 
-    describe('GraphQL error mapping', () => {
-      it('should throw GitAdapterError with NOT_FOUND when GraphQL returns NOT_FOUND error', async () => {
-        const graphqlResponse: AxiosResponse = {
-          data: {
-            errors: [
-              {
-                type: 'NOT_FOUND',
-                message: 'Resource not found',
-              },
-            ],
-          },
-        } as Partial<AxiosResponse> as AxiosResponse
+    it('should throw GitAdapterError with NOT_FOUND when GraphQL returns NOT_FOUND error', async () => {
+      const graphqlResponse: AxiosResponse = {
+        data: {
+          errors: [
+            {
+              type: 'NOT_FOUND',
+              message: 'Resource not found',
+            },
+          ],
+        },
+      } as Partial<AxiosResponse> as AxiosResponse
 
-        mockAxiosInstance.post.mockResolvedValue(graphqlResponse)
+      mockAxiosInstance.post.mockResolvedValue(graphqlResponse)
 
-        await expect(
-          getEntries(mockOptions, mockAxiosInstance, 'abc123'),
-        ).rejects.toThrow(
-          new GitAdapterError(
-            ErrorCode.NOT_FOUND,
-            JSON.stringify(graphqlResponse.data.errors),
-          ),
-        )
-      })
+      await expect(
+        getEntryContent(mockOptions, mockAxiosInstance, 'abc123', ['file.txt']),
+      ).rejects.toThrow(
+        new GitAdapterError(
+          ErrorCode.NOT_FOUND,
+          JSON.stringify(graphqlResponse.data.errors),
+        ),
+      )
     })
   })
 
   describe('getSchema', () => {
-    describe('HTTP error mapping', () => {
-      it('should throw GitAdapterError with FORBIDDEN when axios returns 403', async () => {
-        const axiosError = new AxiosError('Forbidden')
-        axiosError.response = {
-          status: 403,
-          data: { message: 'Access forbidden' },
-        } as Partial<AxiosResponse> as AxiosResponse
+    it('should throw GitAdapterError with FORBIDDEN when axios returns 403', async () => {
+      const axiosError = new AxiosError('Forbidden')
+      axiosError.response = {
+        status: 403,
+        data: { message: 'Access forbidden' },
+      } as Partial<AxiosResponse> as AxiosResponse
 
-        mockAxiosInstance.post.mockRejectedValue(axiosError)
+      mockAxiosInstance.post.mockRejectedValue(axiosError)
 
-        await expect(
-          getSchema(mockOptions, mockAxiosInstance, 'abc123'),
-        ).rejects.toThrow(
-          new GitAdapterError(ErrorCode.FORBIDDEN, 'Access forbidden'),
-        )
-      })
+      await expect(
+        getSchema(mockOptions, mockAxiosInstance, 'abc123'),
+      ).rejects.toThrow(
+        new GitAdapterError(ErrorCode.FORBIDDEN, 'Access forbidden'),
+      )
     })
 
-    describe('GraphQL error mapping', () => {
-      it('should throw GitAdapterError with FORBIDDEN when GraphQL returns FORBIDDEN error', async () => {
-        const graphqlResponse: AxiosResponse = {
-          data: {
-            errors: [
-              {
-                type: 'FORBIDDEN',
-                message: 'Access denied',
-              },
-            ],
-          },
-        } as Partial<AxiosResponse> as AxiosResponse
+    it('should throw GitAdapterError with FORBIDDEN when GraphQL returns FORBIDDEN error', async () => {
+      const graphqlResponse: AxiosResponse = {
+        data: {
+          errors: [
+            {
+              type: 'FORBIDDEN',
+              message: 'Access denied',
+            },
+          ],
+        },
+      } as Partial<AxiosResponse> as AxiosResponse
 
-        mockAxiosInstance.post.mockResolvedValue(graphqlResponse)
+      mockAxiosInstance.post.mockResolvedValue(graphqlResponse)
 
-        await expect(
-          getSchema(mockOptions, mockAxiosInstance, 'abc123'),
-        ).rejects.toThrow(
-          new GitAdapterError(
-            ErrorCode.FORBIDDEN,
-            JSON.stringify(graphqlResponse.data.errors),
-          ),
-        )
-      })
+      await expect(
+        getSchema(mockOptions, mockAxiosInstance, 'abc123'),
+      ).rejects.toThrow(
+        new GitAdapterError(
+          ErrorCode.FORBIDDEN,
+          JSON.stringify(graphqlResponse.data.errors),
+        ),
+      )
     })
   })
 
   describe('getLatestCommitHash', () => {
-    describe('HTTP error mapping', () => {
-      it('should throw GitAdapterError with UNAUTHORIZED when axios returns 401', async () => {
-        const axiosError = new AxiosError('Unauthorized')
-        axiosError.response = {
-          status: 401,
-          data: { message: 'Invalid credentials' },
-        } as Partial<AxiosResponse> as AxiosResponse
+    it('should throw GitAdapterError with UNAUTHORIZED when axios returns 401', async () => {
+      const axiosError = new AxiosError('Unauthorized')
+      axiosError.response = {
+        status: 401,
+        data: { message: 'Invalid credentials' },
+      } as Partial<AxiosResponse> as AxiosResponse
 
-        mockAxiosInstance.post.mockRejectedValue(axiosError)
+      mockAxiosInstance.post.mockRejectedValue(axiosError)
 
-        await expect(
-          getLatestCommitHash(mockOptions, mockAxiosInstance, 'main'),
-        ).rejects.toThrow(
-          new GitAdapterError(ErrorCode.UNAUTHORIZED, 'Invalid credentials'),
-        )
-      })
+      await expect(
+        getLatestCommitHash(mockOptions, mockAxiosInstance, 'main'),
+      ).rejects.toThrow(
+        new GitAdapterError(ErrorCode.UNAUTHORIZED, 'Invalid credentials'),
+      )
     })
 
-    describe('GraphQL error mapping', () => {
-      it('should throw GitAdapterError with TOO_MANY_REQUESTS when GraphQL returns RATE_LIMITED error', async () => {
-        const graphqlResponse: AxiosResponse = {
-          data: {
-            errors: [
-              {
-                type: 'RATE_LIMITED',
-                message: 'Rate limit exceeded',
-              },
-            ],
-          },
-        } as Partial<AxiosResponse> as AxiosResponse
+    it('should throw GitAdapterError with TOO_MANY_REQUESTS when GraphQL returns RATE_LIMITED error', async () => {
+      const graphqlResponse: AxiosResponse = {
+        data: {
+          errors: [
+            {
+              type: 'RATE_LIMITED',
+              message: 'Rate limit exceeded',
+            },
+          ],
+        },
+      } as Partial<AxiosResponse> as AxiosResponse
 
-        mockAxiosInstance.post.mockResolvedValue(graphqlResponse)
+      mockAxiosInstance.post.mockResolvedValue(graphqlResponse)
 
-        await expect(
-          getLatestCommitHash(mockOptions, mockAxiosInstance, 'main'),
-        ).rejects.toThrow(
-          new GitAdapterError(
-            ErrorCode.TOO_MANY_REQUESTS,
-            JSON.stringify(graphqlResponse.data.errors),
-          ),
-        )
-      })
+      await expect(
+        getLatestCommitHash(mockOptions, mockAxiosInstance, 'main'),
+      ).rejects.toThrow(
+        new GitAdapterError(
+          ErrorCode.TOO_MANY_REQUESTS,
+          JSON.stringify(graphqlResponse.data.errors),
+        ),
+      )
     })
   })
 
@@ -170,48 +163,98 @@ describe('Error mapping', () => {
       entries: [],
     }
 
-    describe('HTTP error mapping', () => {
-      it('should throw GitAdapterError with CONFLICT when axios returns 409', async () => {
-        const axiosError = new AxiosError('Conflict')
-        axiosError.response = {
-          status: 409,
-          data: { message: 'Merge conflict detected' },
-        } as Partial<AxiosResponse> as AxiosResponse
+    it('should throw GitAdapterError with CONFLICT when axios returns 409', async () => {
+      const axiosError = new AxiosError('Conflict')
+      axiosError.response = {
+        status: 409,
+        data: { message: 'Merge conflict detected' },
+      } as Partial<AxiosResponse> as AxiosResponse
 
-        mockAxiosInstance.post.mockRejectedValue(axiosError)
+      mockAxiosInstance.post.mockRejectedValue(axiosError)
 
-        await expect(
-          createCommit(mockOptions, mockAxiosInstance, mockCommitDraft),
-        ).rejects.toThrow(
-          new GitAdapterError(ErrorCode.CONFLICT, 'Merge conflict detected'),
-        )
-      })
+      await expect(
+        createCommit(mockOptions, mockAxiosInstance, mockCommitDraft),
+      ).rejects.toThrow(
+        new GitAdapterError(ErrorCode.CONFLICT, 'Merge conflict detected'),
+      )
     })
 
-    describe('GraphQL error mapping', () => {
-      it('should throw GitAdapterError with CONFLICT when GraphQL returns STALE_DATA error', async () => {
-        const graphqlResponse: AxiosResponse = {
-          data: {
-            errors: [
-              {
-                type: 'STALE_DATA',
-                message: 'The expected head OID does not match',
-              },
-            ],
-          },
-        } as Partial<AxiosResponse> as AxiosResponse
+    it('should throw GitAdapterError with CONFLICT when GraphQL returns STALE_DATA error', async () => {
+      const graphqlResponse: AxiosResponse = {
+        data: {
+          errors: [
+            {
+              type: 'STALE_DATA',
+              message: 'The expected head OID does not match',
+            },
+          ],
+        },
+      } as Partial<AxiosResponse> as AxiosResponse
 
-        mockAxiosInstance.post.mockResolvedValue(graphqlResponse)
+      mockAxiosInstance.post.mockResolvedValue(graphqlResponse)
 
-        await expect(
-          createCommit(mockOptions, mockAxiosInstance, mockCommitDraft),
-        ).rejects.toThrow(
-          new GitAdapterError(
-            ErrorCode.CONFLICT,
-            JSON.stringify(graphqlResponse.data.errors),
-          ),
-        )
-      })
+      await expect(
+        createCommit(mockOptions, mockAxiosInstance, mockCommitDraft),
+      ).rejects.toThrow(
+        new GitAdapterError(
+          ErrorCode.CONFLICT,
+          JSON.stringify(graphqlResponse.data.errors),
+        ),
+      )
+    })
+  })
+
+  describe('getFilePaths', () => {
+    it('should throw GitAdapterError with NOT_FOUND when axios returns 404', async () => {
+      const axiosError = new AxiosError('Not Found')
+      axiosError.response = {
+        status: 404,
+        data: { message: 'Repository not found' },
+      } as Partial<AxiosResponse> as AxiosResponse
+
+      mockAxiosInstance.get.mockRejectedValue(axiosError)
+
+      await expect(
+        getFilePaths(mockOptions, mockAxiosInstance, 'abc123'),
+      ).rejects.toThrow(
+        new GitAdapterError(ErrorCode.NOT_FOUND, 'Repository not found'),
+      )
+    })
+
+    it('should throw GitAdapterError with INTERNAL_ERROR when response is undefined', async () => {
+      // Simulate axios.get resolving to undefined (no throw, but no response)
+      mockAxiosInstance.get.mockResolvedValue(
+        undefined as unknown as AxiosResponse,
+      )
+
+      await expect(
+        getFilePaths(mockOptions, mockAxiosInstance, 'abc123'),
+      ).rejects.toThrow(
+        new GitAdapterError(
+          ErrorCode.INTERNAL_ERROR,
+          'Failed to fetch repository file list.',
+        ),
+      )
+    })
+
+    it('should throw GitAdapterError with INTERNAL_ERROR when API indicates truncated tree', async () => {
+      const truncatedResponse = {
+        data: {
+          truncated: true,
+          tree: [],
+        },
+      } as Partial<AxiosResponse> as AxiosResponse
+
+      mockAxiosInstance.get.mockResolvedValue(truncatedResponse)
+
+      await expect(
+        getFilePaths(mockOptions, mockAxiosInstance, 'abc123'),
+      ).rejects.toThrow(
+        new GitAdapterError(
+          ErrorCode.INTERNAL_ERROR,
+          'Too many files in repository.',
+        ),
+      )
     })
   })
 })
