@@ -1,5 +1,5 @@
 import { GitHubRepositoryOptions } from '../index'
-import { PATH_ENTRY_FOLDER, PATH_SCHEMA_FILE } from './types'
+import { PATH_ENTRY_FOLDER, PATH_SCHEMA_FILE } from '../types'
 
 export function getPathSchema(gitRepositoryOptions: GitHubRepositoryOptions) {
   return gitRepositoryOptions.pathSchemaFile ?? PATH_SCHEMA_FILE
@@ -11,8 +11,8 @@ export function getPathEntryFolder(
   const pathEntryFolder =
     gitRepositoryOptions.pathEntryFolder ?? PATH_ENTRY_FOLDER
 
-  if (pathEntryFolder.endsWith('/')) {
-    return pathEntryFolder.substring(0, pathEntryFolder.length - 1)
+  if (!pathEntryFolder.endsWith('/')) {
+    return pathEntryFolder + '/'
   }
 
   return pathEntryFolder

@@ -1,29 +1,20 @@
 import { parse } from 'yaml'
 import { Entry } from '@commitspark/git-adapter'
-import { ENTRY_EXTENSION } from './types'
+import { ENTRY_EXTENSION } from '../types'
+import { getPathEntryFolder } from './path-factory'
+import { GitHubRepositoryOptions } from '../index'
 
-interface TreeEntry {
-  name: string
-  object: {
-    __typename: string
-    text: string
-  }
-}
-
-export function createEntriesFromBlobsQueryResponseData(
-  entries: TreeEntry[],
+export function createEntriesFromFileContent(
+  gitRepositoryOptions: GitHubRepositoryOptions,
+  filePathContentMap: Map<string, string>,
 ): Entry[] {
-  return entries
-    .filter(
-      (entry: TreeEntry) =>
-        entry.name.endsWith(ENTRY_EXTENSION) &&
-        entry.object['__typename'] === 'Blob',
-    )
-    .map((entry: TreeEntry) => {
-      const fileContent = parse(entry.object.text)
-      const id = entry.name.substring(
-        0,
-        entry.name.length - ENTRY_EXTENSION.length,
+  return Array.from(filePathContentMap)
+    .filter(([filePath]) => filePath.endsWith(ENTRY_EXTENSION))
+    .map(([filePath, content]) => {
+      const fileContent = parse(content)
+      const id = filePath.substring(
+        getPathEntryFolder(gitRepositoryOptions).length, // strip folder path back out
+        filePath.length - ENTRY_EXTENSION.length,
       )
       return {
         id: id,

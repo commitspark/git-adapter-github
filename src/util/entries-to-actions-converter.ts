@@ -2,7 +2,7 @@ import { EntryDraft } from '@commitspark/git-adapter'
 import { stringify } from 'yaml'
 import { AdditionModel } from '../model/addition.model'
 import { DeletionModel } from '../model/deletion.model'
-import { ENTRY_EXTENSION } from './types'
+import { ENTRY_EXTENSION } from '../types'
 
 export function convertEntriesToActions(
   entryDrafts: EntryDraft[],
