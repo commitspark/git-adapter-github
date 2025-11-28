@@ -34,14 +34,18 @@ export function createBlobsContentByFilePathsQuery(
 
     for (const [j, filename] of batchFilenames.entries()) {
       const fileAliasIndex = fileIndex + j
-      const queryFileAlias = `file${fileAliasIndex}`
-      query += `    ${queryFileAlias}: object(expression: "${commitHash}:${filename}") {
+      const fileAlias = `file${fileAliasIndex}`
+      // using one query variable per file significantly blows up query size, which would require a lower batch size to
+      // avoid GitHub erroring out, and in consequence much lower throughput; we therefore use this poor man's manual
+      // escaping of filenames instead
+      const escapedExpression = JSON.stringify(`${commitHash}:${filename}`)
+      query += `    ${fileAlias}: object(expression: ${escapedExpression}) {
       ... on Blob {
           text
         }
       }
 `
-      queryFilenameAliasMap.set(queryFileAlias, filename)
+      queryFilenameAliasMap.set(fileAlias, filename)
     }
     query += `  }
 }`
