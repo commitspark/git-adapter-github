@@ -1,26 +1,10 @@
-export function createBlobsContentQuery(): string {
+export function createSingleBlobContentQuery(): string {
   return `
       query ($repositoryOwner: String!, $repositoryName: String!, $expression: String!) { 
         repository(owner: $repositoryOwner, name: $repositoryName) {
           object(expression: $expression) {
             ... on Blob {
               text
-            }
-          }
-        }
-      }
-    `
-}
-
-export function createFilenamesQuery(): string {
-  return `
-      query ($repositoryOwner: String!, $repositoryName: String!, $expression: String!) { 
-        repository(owner: $repositoryOwner, name: $repositoryName) {
-          object(expression: $expression) {
-            ... on Tree {
-              entries {
-                name
-              }
             }
           }
         }

@@ -8,7 +8,7 @@ import {
 } from '@commitspark/git-adapter'
 import { GitHubRepositoryOptions } from './index'
 import {
-  createBlobsContentQuery,
+  createSingleBlobContentQuery,
   createCommitMutation,
   createLatestCommitQuery,
 } from './github-api/graphql-query-factory'
@@ -51,7 +51,7 @@ export const getSchema = async (
   const token = gitRepositoryOptions.accessToken
   const schemaFilePath = getPathSchema(gitRepositoryOptions)
 
-  const queryContent = createBlobsContentQuery()
+  const queryContent = createSingleBlobContentQuery()
 
   let response: CacheAxiosResponse | undefined
   try {
