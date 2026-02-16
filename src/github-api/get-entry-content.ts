@@ -1,8 +1,8 @@
 import { AxiosCacheInstance, CacheAxiosResponse } from 'axios-cache-interceptor'
-import { GitHubRepositoryOptions } from '../index'
-import { createBlobsContentByFilePathsQuery } from './graphql-query-factory'
-import { GITHUB_GRAPHQL_API_URL, QUERY_BATCH_SIZE } from '../types'
-import { handleGraphQLErrors, handleHttpErrors } from '../errors'
+import { GitHubRepositoryOptions } from '../index.ts'
+import { createBlobsContentByFilePathsQuery } from './graphql-query-factory.ts'
+import { GITHUB_GRAPHQL_API_URL, QUERY_BATCH_SIZE } from '../types.ts'
+import { handleGraphQLErrors, handleHttpErrors } from '../errors.ts'
 
 export const getEntryContent = async (
   gitRepositoryOptions: GitHubRepositoryOptions,

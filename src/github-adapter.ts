@@ -6,19 +6,19 @@ import {
   ErrorCode,
   GitAdapterError,
 } from '@commitspark/git-adapter'
-import { GitHubRepositoryOptions } from './index'
+import { GitHubRepositoryOptions } from './index.ts'
 import {
   createSingleBlobContentQuery,
   createCommitMutation,
   createLatestCommitQuery,
-} from './github-api/graphql-query-factory'
-import { convertEntriesToActions } from './util/entries-to-actions-converter'
-import { getPathEntryFolder, getPathSchema } from './util/path-factory'
-import { createEntriesFromFileContent } from './util/entry-factory'
-import { handleGraphQLErrors, handleHttpErrors } from './errors'
-import { getEntryContent } from './github-api/get-entry-content'
-import { getFilePaths } from './github-api/get-file-paths'
-import { GITHUB_GRAPHQL_API_URL } from './types'
+} from './github-api/graphql-query-factory.ts'
+import { convertEntriesToActions } from './util/entries-to-actions-converter.ts'
+import { getPathEntryFolder, getPathSchema } from './util/path-factory.ts'
+import { createEntriesFromFileContent } from './util/entry-factory.ts'
+import { handleGraphQLErrors, handleHttpErrors } from './errors.ts'
+import { getEntryContent } from './github-api/get-entry-content.ts'
+import { getFilePaths } from './github-api/get-file-paths.ts'
+import { GITHUB_GRAPHQL_API_URL } from './types.ts'
 
 export const getEntries = async (
   gitRepositoryOptions: GitHubRepositoryOptions,

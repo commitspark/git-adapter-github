@@ -1,8 +1,8 @@
 import { parse } from 'yaml'
 import { Entry } from '@commitspark/git-adapter'
-import { ENTRY_EXTENSION } from '../types'
-import { getPathEntryFolder } from './path-factory'
-import { GitHubRepositoryOptions } from '../index'
+import { ENTRY_EXTENSION } from '../types.ts'
+import { getPathEntryFolder } from './path-factory.ts'
+import { GitHubRepositoryOptions } from '../index.ts'
 
 export function createEntriesFromFileContent(
   gitRepositoryOptions: GitHubRepositoryOptions,

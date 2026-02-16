@@ -1,8 +1,8 @@
 import { EntryDraft } from '@commitspark/git-adapter'
 import { stringify } from 'yaml'
-import { AdditionModel } from '../model/addition.model'
-import { DeletionModel } from '../model/deletion.model'
-import { ENTRY_EXTENSION } from '../types'
+import { AdditionModel } from '../model/addition.model.ts'
+import { DeletionModel } from '../model/deletion.model.ts'
+import { ENTRY_EXTENSION } from '../types.ts'
 
 export function convertEntriesToActions(
   entryDrafts: EntryDraft[],

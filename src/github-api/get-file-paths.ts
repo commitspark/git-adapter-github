@@ -1,9 +1,9 @@
-import { GitHubRepositoryOptions } from '../index'
+import { GitHubRepositoryOptions } from '../index.ts'
 import { AxiosCacheInstance } from 'axios-cache-interceptor'
 import { ErrorCode, GitAdapterError } from '@commitspark/git-adapter'
-import { getPathEntryFolder } from '../util/path-factory'
-import { handleHttpErrors } from '../errors'
-import { GITHUB_REST_API_URL } from '../types'
+import { getPathEntryFolder } from '../util/path-factory.ts'
+import { handleHttpErrors } from '../errors.ts'
+import { GITHUB_REST_API_URL } from '../types.ts'
 
 export const getFilePaths = async (
   gitRepositoryOptions: GitHubRepositoryOptions,
