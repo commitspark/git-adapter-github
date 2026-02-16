@@ -1,5 +1,7 @@
 name: Jest
-on: push
+on:
+    push:
+    pull_request:
 jobs:
     test:
         runs-on: ubuntu-22.04
@@ -8,7 +10,7 @@ jobs:
             - name: Setup Node.js
               uses: actions/setup-node@v1
               with:
-                  node-version: "18"
+                  node-version: "24"
 
             - name: Install dependencies
               run: npm install
