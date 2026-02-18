@@ -4,7 +4,7 @@ import {
   setupCache,
 } from 'axios-cache-interceptor'
 import axios from 'axios'
-import { cacheKeyGenerator } from './cache-key-generator'
+import { cacheKeyGenerator } from './cache-key-generator.ts'
 
 export const QUERY_CACHE_SECONDS = 10 * 60
 

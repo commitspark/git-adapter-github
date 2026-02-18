@@ -1,11 +1,11 @@
 import { GitAdapter, CommitDraft } from '@commitspark/git-adapter'
-import { createAxiosCachedInstance } from './axios/cached-instance'
+import { createAxiosCachedInstance } from './axios/cached-instance.ts'
 import {
   createCommit,
   getEntries,
   getLatestCommitHash,
   getSchema,
-} from './github-adapter'
+} from './github-adapter.ts'
 
 export interface GitHubRepositoryOptions {
   repositoryOwner: string

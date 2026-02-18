@@ -1,5 +1,5 @@
-import { GitHubRepositoryOptions } from '../index'
-import { PATH_ENTRY_FOLDER, PATH_SCHEMA_FILE } from '../types'
+import { GitHubRepositoryOptions } from '../index.ts'
+import { PATH_ENTRY_FOLDER, PATH_SCHEMA_FILE } from '../types.ts'
 
 export function getPathSchema(gitRepositoryOptions: GitHubRepositoryOptions) {
   return gitRepositoryOptions.pathSchemaFile ?? PATH_SCHEMA_FILE
