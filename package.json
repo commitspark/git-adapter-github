@@ -6,6 +6,7 @@
   "private": false,
   "files": [
     "dist/**",
+    "!dist/**/*.tsbuildinfo",
     "src/**",
     "README.md",
     "LICENSE",
