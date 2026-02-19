@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix incorrect ESM build configuration leading to broken build output
 
+### Changed
+
+- Upgrade dependencies
+
 ## [0.30.0] - 2025-11-28
 
 ### Added
