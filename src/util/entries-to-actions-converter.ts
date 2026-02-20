@@ -11,10 +11,15 @@ export function convertEntriesToActions(
   additions: AdditionModel[]
   deletions: DeletionModel[]
 } {
+  if (!pathEntryFolder.endsWith('/')) {
+    throw new Error('pathEntryFolder must end with a slash')
+  }
+
   const additions: AdditionModel[] = []
   const deletions: DeletionModel[] = []
+
   entryDrafts.forEach((entryDraft) => {
-    const entryPath = `${pathEntryFolder}/${entryDraft.id}${ENTRY_EXTENSION}`
+    const entryPath = `${pathEntryFolder}${entryDraft.id}${ENTRY_EXTENSION}`
     if (entryDraft.deletion) {
       deletions.push(new DeletionModel(entryPath))
     } else {
