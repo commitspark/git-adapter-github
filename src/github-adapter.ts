@@ -217,5 +217,5 @@ export const createCommit = async (
     )
   }
 
-  return { ref: mutationResult.commit.oid }
+  return { commitHash: mutationResult.commit.oid }
 }
