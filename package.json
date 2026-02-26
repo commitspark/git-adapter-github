@@ -1,7 +1,7 @@
 {
   "name": "@commitspark/git-adapter-github",
   "description": "GitHub adapter for Commitspark to create and manage structured data in GitHub repositories",
-  "version": "0.31.1",
+  "version": "0.32.0",
   "license": "ISC",
   "private": false,
   "files": [
