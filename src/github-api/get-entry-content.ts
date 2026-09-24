@@ -64,10 +64,14 @@ const processContentResponse = (
   handleGraphQLErrors(contentResponse)
   const filesResponseData = contentResponse.data.data.repository as Record<
     string,
-    { text: string }
+    { text: string } | null
   >
 
   for (const [queryAlias, fileObject] of Object.entries(filesResponseData)) {
+    if (fileObject === null) {
+      // requested file does not exist at this commit
+      continue
+    }
     filePathsContentMap.set(
       queryFilenameAliasMap.get(queryAlias) as string, // we assume we received only those files we know about
       fileObject.text,

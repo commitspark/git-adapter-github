@@ -2,7 +2,8 @@ import { GitAdapter, CommitDraft } from '@commitspark/git-adapter'
 import { createAxiosCachedInstance } from './axios/cached-instance.ts'
 import {
   createCommit,
-  getEntries,
+  getEntriesByIds,
+  getEntryHashes,
   getLatestCommitHash,
   getSchema,
 } from './github-adapter.ts'
@@ -21,8 +22,15 @@ export function createAdapter(
   const axiosCacheInstance = createAxiosCachedInstance()
 
   return {
-    getEntries: (commitHash: string) =>
-      getEntries(gitRepositoryOptions, axiosCacheInstance, commitHash),
+    getEntryHashes: (commitHash: string) =>
+      getEntryHashes(gitRepositoryOptions, axiosCacheInstance, commitHash),
+    getEntriesByIds: (commitHash: string, ids: string[]) =>
+      getEntriesByIds(
+        gitRepositoryOptions,
+        axiosCacheInstance,
+        commitHash,
+        ids,
+      ),
     getSchema: (commitHash: string) =>
       getSchema(gitRepositoryOptions, axiosCacheInstance, commitHash),
     getLatestCommitHash: (ref: string) =>

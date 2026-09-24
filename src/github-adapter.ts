@@ -3,6 +3,7 @@ import {
   Commit,
   CommitDraft,
   Entry,
+  EntryHash,
   ErrorCode,
   GitAdapterError,
 } from '@commitspark/git-adapter'
@@ -13,29 +14,52 @@ import {
   createLatestCommitQuery,
 } from './github-api/graphql-query-factory.ts'
 import { convertEntriesToActions } from './util/entries-to-actions-converter.ts'
-import { getPathEntryFolder, getPathSchema } from './util/path-factory.ts'
+import {
+  getEntryIdFromPath,
+  getPathEntry,
+  getPathEntryFolder,
+  getPathSchema,
+} from './util/path-factory.ts'
 import { createEntriesFromFileContent } from './util/entry-factory.ts'
 import { handleGraphQLErrors, handleHttpErrors } from './errors.ts'
 import { getEntryContent } from './github-api/get-entry-content.ts'
-import { getFilePaths } from './github-api/get-file-paths.ts'
-import { GITHUB_GRAPHQL_API_URL } from './types.ts'
+import { getFileHashes } from './github-api/get-file-hashes.ts'
+import { ENTRY_EXTENSION, GITHUB_GRAPHQL_API_URL } from './types.ts'
 
-export const getEntries = async (
+export const getEntryHashes = async (
   gitRepositoryOptions: GitHubRepositoryOptions,
   axiosCacheInstance: AxiosCacheInstance,
   commitHash: string,
-): Promise<Entry[]> => {
-  const filenames: string[] = await getFilePaths(
+): Promise<EntryHash[]> => {
+  const fileHashes = await getFileHashes(
     gitRepositoryOptions,
     axiosCacheInstance,
     commitHash,
   )
 
+  return fileHashes
+    .filter((fileHash) => fileHash.path.endsWith(ENTRY_EXTENSION))
+    .map((fileHash) => ({
+      id: getEntryIdFromPath(gitRepositoryOptions, fileHash.path),
+      hash: fileHash.hash,
+    }))
+}
+
+export const getEntriesByIds = async (
+  gitRepositoryOptions: GitHubRepositoryOptions,
+  axiosCacheInstance: AxiosCacheInstance,
+  commitHash: string,
+  ids: string[],
+): Promise<Entry[]> => {
+  if (ids.length === 0) {
+    return []
+  }
+
   const filePathsContentMap = await getEntryContent(
     gitRepositoryOptions,
     axiosCacheInstance,
     commitHash,
-    filenames,
+    ids.map((id) => getPathEntry(gitRepositoryOptions, id)),
   )
 
   return createEntriesFromFileContent(gitRepositoryOptions, filePathsContentMap)

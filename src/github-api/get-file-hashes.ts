@@ -5,11 +5,16 @@ import { getPathEntryFolder } from '../util/path-factory.ts'
 import { handleHttpErrors } from '../errors.ts'
 import { GITHUB_REST_API_URL } from '../types.ts'
 
-export const getFilePaths = async (
+export interface FileHash {
+  path: string
+  hash: string
+}
+
+export const getFileHashes = async (
   gitRepositoryOptions: GitHubRepositoryOptions,
   axiosCacheInstance: AxiosCacheInstance,
   treeSha: string,
-): Promise<string[]> => {
+): Promise<FileHash[]> => {
   const pathEntryFolder = getPathEntryFolder(gitRepositoryOptions)
   const { repositoryOwner, repositoryName, accessToken } = gitRepositoryOptions
 
@@ -52,7 +57,7 @@ export const getFilePaths = async (
       (entry) =>
         entry.type === 'blob' && entry.path.startsWith(pathEntryFolder),
     )
-    .map((entry) => entry.path)
+    .map((entry) => ({ path: entry.path, hash: entry.sha }))
 }
 
 interface GitHubTreeResponse {
@@ -63,4 +68,5 @@ interface GitHubTreeResponse {
 interface GitHubTreeEntry {
   path: string
   type: 'blob' | 'tree' | 'commit'
+  sha: string
 }

@@ -7,7 +7,7 @@ import {
   getSchema,
 } from '../../src/github-adapter'
 import { getEntryContent } from '../../src/github-api/get-entry-content'
-import { getFilePaths } from '../../src/github-api/get-file-paths'
+import { getFileHashes } from '../../src/github-api/get-file-hashes'
 import { GitHubRepositoryOptions } from '../../src'
 
 describe('Error mapping', () => {
@@ -204,7 +204,7 @@ describe('Error mapping', () => {
     })
   })
 
-  describe('getFilePaths', () => {
+  describe('getFileHashes', () => {
     it('should throw GitAdapterError with NOT_FOUND when axios returns 404', async () => {
       const axiosError = new AxiosError('Not Found')
       axiosError.response = {
@@ -215,7 +215,7 @@ describe('Error mapping', () => {
       mockAxiosInstance.get.mockRejectedValue(axiosError)
 
       await expect(
-        getFilePaths(mockOptions, mockAxiosInstance, 'abc123'),
+        getFileHashes(mockOptions, mockAxiosInstance, 'abc123'),
       ).rejects.toThrow(
         new GitAdapterError(ErrorCode.NOT_FOUND, 'Repository not found'),
       )
@@ -228,7 +228,7 @@ describe('Error mapping', () => {
       )
 
       await expect(
-        getFilePaths(mockOptions, mockAxiosInstance, 'abc123'),
+        getFileHashes(mockOptions, mockAxiosInstance, 'abc123'),
       ).rejects.toThrow(
         new GitAdapterError(
           ErrorCode.INTERNAL_ERROR,
@@ -248,7 +248,7 @@ describe('Error mapping', () => {
       mockAxiosInstance.get.mockResolvedValue(truncatedResponse)
 
       await expect(
-        getFilePaths(mockOptions, mockAxiosInstance, 'abc123'),
+        getFileHashes(mockOptions, mockAxiosInstance, 'abc123'),
       ).rejects.toThrow(
         new GitAdapterError(
           ErrorCode.INTERNAL_ERROR,
