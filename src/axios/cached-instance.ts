@@ -6,7 +6,7 @@ import {
 import axios from 'axios'
 import { cacheKeyGenerator } from './cache-key-generator.ts'
 
-export const QUERY_CACHE_SECONDS = 10 * 60
+const QUERY_CACHE_SECONDS = 10 * 60
 
 export const createAxiosCachedInstance = (): AxiosCacheInstance => {
   return setupCache(axios.create(), {

@@ -5,7 +5,7 @@ import { getPathEntryFolder } from '../util/path-factory.ts'
 import { handleHttpErrors } from '../errors.ts'
 import { GITHUB_REST_API_URL } from '../types.ts'
 
-export interface FileHash {
+interface FileHash {
   path: string
   hash: string
 }
