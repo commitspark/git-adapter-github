@@ -6,6 +6,8 @@ import {
   EntryHash,
   ErrorCode,
   GitAdapterError,
+  isHiddenPath,
+  validateEntryId,
 } from '@commitspark/git-adapter'
 import { GitHubRepositoryOptions } from './index.ts'
 import {
@@ -37,8 +39,13 @@ export const getEntryHashes = async (
     commitHash,
   )
 
+  const pathEntryFolder = getPathEntryFolder(gitRepositoryOptions)
   return fileHashes
-    .filter((fileHash) => fileHash.path.endsWith(ENTRY_EXTENSION))
+    .filter(
+      (fileHash) =>
+        fileHash.path.endsWith(ENTRY_EXTENSION) &&
+        !isHiddenPath(fileHash.path.substring(pathEntryFolder.length)),
+    )
     .map((fileHash) => ({
       id: getEntryIdFromPath(gitRepositoryOptions, fileHash.path),
       hash: fileHash.hash,
@@ -51,6 +58,7 @@ export const getEntriesByIds = async (
   commitHash: string,
   ids: string[],
 ): Promise<Entry[]> => {
+  ids.forEach(validateEntryId)
   if (ids.length === 0) {
     return []
   }
@@ -186,6 +194,7 @@ export const createCommit = async (
   axiosCacheInstance: AxiosCacheInstance,
   commitDraft: CommitDraft,
 ): Promise<Commit> => {
+  commitDraft.entries.forEach((entryDraft) => validateEntryId(entryDraft.id))
   const token = gitRepositoryOptions.accessToken
   const pathEntryFolder = getPathEntryFolder(gitRepositoryOptions)
 

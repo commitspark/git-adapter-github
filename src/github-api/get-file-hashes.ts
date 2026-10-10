@@ -5,6 +5,9 @@ import { getPathEntryFolder } from '../util/path-factory.ts'
 import { handleHttpErrors } from '../errors.ts'
 import { GITHUB_REST_API_URL } from '../types.ts'
 
+// symbolic links are stored as blobs, but are not files
+const SYMBOLIC_LINK_MODE = '120000'
+
 interface FileHash {
   path: string
   hash: string
@@ -55,7 +58,9 @@ export const getFileHashes = async (
   return data.tree
     .filter(
       (entry) =>
-        entry.type === 'blob' && entry.path.startsWith(pathEntryFolder),
+        entry.type === 'blob' &&
+        entry.mode !== SYMBOLIC_LINK_MODE &&
+        entry.path.startsWith(pathEntryFolder),
     )
     .map((entry) => ({ path: entry.path, hash: entry.sha }))
 }
@@ -67,6 +72,7 @@ interface GitHubTreeResponse {
 
 interface GitHubTreeEntry {
   path: string
+  mode: string
   type: 'blob' | 'tree' | 'commit'
   sha: string
 }
