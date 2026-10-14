@@ -179,6 +179,32 @@ describe('Error mapping', () => {
       )
     })
 
+    it('should pass the parent commit as expected head of the branch', async () => {
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { data: { commitCreate: { commit: { oid: 'new123' } } } },
+      } as Partial<AxiosResponse> as AxiosResponse)
+
+      await expect(
+        createCommit(mockOptions, mockAxiosInstance, mockCommitDraft),
+      ).resolves.toEqual({ commitHash: 'new123' })
+      const request = mockAxiosInstance.post.mock.calls[0][1] as {
+        query: string
+        variables: { precedingCommitSha: string }
+      }
+      expect(request.query).toContain('expectedHeadOid: $precedingCommitSha')
+      expect(request.variables.precedingCommitSha).toEqual('parent123')
+    })
+
+    it('should throw GitAdapterError with INTERNAL_ERROR when GitHub returns no commit', async () => {
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { data: { commitCreate: null } },
+      } as Partial<AxiosResponse> as AxiosResponse)
+
+      await expect(
+        createCommit(mockOptions, mockAxiosInstance, mockCommitDraft),
+      ).rejects.toMatchObject({ code: ErrorCode.INTERNAL_ERROR })
+    })
+
     it('should throw GitAdapterError with CONFLICT when GraphQL returns STALE_DATA error', async () => {
       const graphqlResponse: AxiosResponse = {
         data: {
