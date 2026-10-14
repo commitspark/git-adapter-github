@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   that a moved branch leads to `CONFLICT`
 - Throw `INTERNAL_ERROR` instead of a `TypeError` when GitHub returns no commit, and remove the check for mutation
   payload errors, which `createCommitOnBranch` does not return
+- Upgrade to @commitspark/git-adapter 2.0.0-beta.3
 
 ## [2.0.0-beta.2] - 2026-10-14
 
