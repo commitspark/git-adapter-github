@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Document that commits are only added if the branch still points to `parentSha` (passed as `expectedHeadOid`) and
+  that a moved branch leads to `CONFLICT`
+- Throw `INTERNAL_ERROR` instead of a `TypeError` when GitHub returns no commit, and remove the check for mutation
+  payload errors, which `createCommitOnBranch` does not return
+
 ## [2.0.0-beta.2] - 2026-10-14
 
 ### Changed

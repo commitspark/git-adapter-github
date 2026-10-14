@@ -58,6 +58,13 @@ Access tokens for a user obtained
 from an [OAuth app](https://docs.github.com/en/apps/oauth-apps/using-oauth-apps/authorizing-oauth-apps) can be used in
 the same way (including permissions) as fine-grained personal access tokens.
 
+## Commit Precondition
+
+Commits are created with GitHub's `createCommitOnBranch` GraphQL mutation, passing `parentSha` of the commit draft as
+`expectedHeadOid`. GitHub only moves the branch if it still points to that commit, and otherwise rejects the commit
+with error type `STALE_DATA`, which is mapped to `CONFLICT` (see below). This check is atomic, so a commit is never
+added on top of changes that the caller did not validate its commit against.
+
 ## Error Handling
 
 This adapter sends requests to the GitHub GraphQL API. In case a request fails, HTTP and GraphQL errors are mapped to
