@@ -189,6 +189,12 @@ export const getLatestCommitHash = async (
   return lastCommit
 }
 
+/**
+ * Commits the entry drafts with GitHub's `createCommitOnBranch` mutation, passing `parentSha` as `expectedHeadOid`.
+ * GitHub only moves the branch if it still points to that commit and otherwise fails with error type `STALE_DATA`,
+ * which is mapped to `CONFLICT`. This atomic check satisfies the commit precondition of the adapter interface, so that
+ * callers can repeat their validation against the new branch head instead of overwriting changes they have not seen.
+ */
 export const createCommit = async (
   gitRepositoryOptions: GitHubRepositoryOptions,
   axiosCacheInstance: AxiosCacheInstance,
@@ -240,15 +246,15 @@ export const createCommit = async (
 
   handleGraphQLErrors(response)
 
-  const mutationResult = response.data.data.commitCreate
-
-  if (mutationResult.errors) {
-    const errorMessage = JSON.stringify(mutationResult.errors)
+  // `createCommitOnBranch` reports failures such as a moved branch as GraphQL errors handled above
+  const commitHash: string | undefined =
+    response.data.data?.commitCreate?.commit?.oid
+  if (!commitHash) {
     throw new GitAdapterError(
-      ErrorCode.BAD_REQUEST,
-      `Failed to create commit: ${errorMessage}`,
+      ErrorCode.INTERNAL_ERROR,
+      `Failed to create commit: ${JSON.stringify(response.data)}`,
     )
   }
 
-  return { commitHash: mutationResult.commit.oid }
+  return { commitHash: commitHash }
 }
