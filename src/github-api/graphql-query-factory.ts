@@ -60,7 +60,8 @@ export function createCommitMutation(): string {
       mutation (
         $repositoryNameWithOwner: String!,
         $branchName: String!,
-        $commitMessage: String!,
+        $commitHeadline: String!,
+        $commitBody: String,
         $precedingCommitSha: GitObjectID!,
         $additions: [FileAddition!],
         $deletions: [FileDeletion!]
@@ -71,8 +72,8 @@ export function createCommitMutation(): string {
             branchName: $branchName
           }
           message: {
-            headline: $commitMessage
-            body:""
+            headline: $commitHeadline
+            body: $commitBody
           }
           expectedHeadOid: $precedingCommitSha
           fileChanges: {

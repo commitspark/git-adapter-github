@@ -195,6 +195,35 @@ describe('Error mapping', () => {
       expect(request.variables.precedingCommitSha).toEqual('parent123')
     })
 
+    it.each([
+      ['without body', undefined, null],
+      [
+        'with body',
+        'Change details\n\nMore details',
+        'Change details\n\nMore details',
+      ],
+    ])(
+      'should pass message and body of a commit draft %s as headline and body',
+      async (_description, body, expectedBody) => {
+        mockAxiosInstance.post.mockResolvedValue({
+          data: { data: { commitCreate: { commit: { oid: 'new123' } } } },
+        } as Partial<AxiosResponse> as AxiosResponse)
+
+        await createCommit(mockOptions, mockAxiosInstance, {
+          ...mockCommitDraft,
+          body,
+        })
+        const request = mockAxiosInstance.post.mock.calls[0][1] as {
+          query: string
+          variables: { commitHeadline: string; commitBody: string | null }
+        }
+        expect(request.query).toContain('headline: $commitHeadline')
+        expect(request.query).toContain('body: $commitBody')
+        expect(request.variables.commitHeadline).toEqual('Test commit')
+        expect(request.variables.commitBody).toEqual(expectedBody)
+      },
+    )
+
     it('should throw GitAdapterError with INTERNAL_ERROR when GitHub returns no commit', async () => {
       mockAxiosInstance.post.mockResolvedValue({
         data: { data: { commitCreate: null } },
