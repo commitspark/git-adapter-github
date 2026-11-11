@@ -13,10 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Document that commits are only added if the branch still points to `parentSha` (passed as `expectedHeadOid`) and
-  that a moved branch leads to `CONFLICT`
-- Throw `INTERNAL_ERROR` instead of a `TypeError` when GitHub returns no commit, and remove the check for mutation
-  payload errors, which `createCommitOnBranch` does not return
+- Document that a commit fails with `CONFLICT` if the branch no longer points to `parentSha`
+
+### Fixed
+
+- Throw `INTERNAL_ERROR` instead of a `TypeError` when GitHub unexpectedly returns no commit
 
 ## [2.0.0-beta.2] - 2026-10-14
 
