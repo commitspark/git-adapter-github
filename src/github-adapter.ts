@@ -220,7 +220,8 @@ export const createCommit = async (
         variables: {
           repositoryNameWithOwner: `${gitRepositoryOptions.repositoryOwner}/${gitRepositoryOptions.repositoryName}`,
           branchName: commitDraft.ref,
-          commitMessage: commitDraft.message ?? '-',
+          commitHeadline: commitDraft.message,
+          commitBody: commitDraft.body ?? null,
           precedingCommitSha: commitDraft.parentSha,
           additions: additions,
           deletions: deletions,
