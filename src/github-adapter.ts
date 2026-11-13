@@ -16,6 +16,7 @@ import {
   createLatestCommitQuery,
 } from './github-api/graphql-query-factory.ts'
 import { convertEntriesToActions } from './util/entries-to-actions-converter.ts'
+import { AdditionModel } from './model/addition.model.ts'
 import {
   getEntryIdFromPath,
   getPathEntry,
@@ -208,6 +209,14 @@ export const createCommit = async (
     commitDraft.entries,
     pathEntryFolder,
   )
+  if (commitDraft.schema !== undefined) {
+    additions.push(
+      new AdditionModel(
+        getPathSchema(gitRepositoryOptions),
+        commitDraft.schema,
+      ),
+    )
+  }
 
   const mutateCommit = createCommitMutation()
 

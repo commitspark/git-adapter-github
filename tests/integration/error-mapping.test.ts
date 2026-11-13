@@ -224,6 +224,38 @@ describe('Error mapping', () => {
       },
     )
 
+    it('should write the schema of a commit draft to the schema file', async () => {
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { data: { commitCreate: { commit: { oid: 'new123' } } } },
+      } as Partial<AxiosResponse> as AxiosResponse)
+
+      await createCommit(mockOptions, mockAxiosInstance, {
+        ...mockCommitDraft,
+        schema: 'type Query { a: String }',
+      })
+      const request = mockAxiosInstance.post.mock.calls[0][1] as {
+        variables: { additions: { path: string; contents: string }[] }
+      }
+      expect(request.variables.additions).toEqual([
+        {
+          path: 'commitspark/schema/schema.graphql',
+          contents: Buffer.from('type Query { a: String }').toString('base64'),
+        },
+      ])
+    })
+
+    it('should not write the schema file if a commit draft has no schema', async () => {
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { data: { commitCreate: { commit: { oid: 'new123' } } } },
+      } as Partial<AxiosResponse> as AxiosResponse)
+
+      await createCommit(mockOptions, mockAxiosInstance, mockCommitDraft)
+      const request = mockAxiosInstance.post.mock.calls[0][1] as {
+        variables: { additions: unknown[] }
+      }
+      expect(request.variables.additions).toEqual([])
+    })
+
     it('should throw GitAdapterError with INTERNAL_ERROR when GitHub returns no commit', async () => {
       mockAxiosInstance.post.mockResolvedValue({
         data: { data: { commitCreate: null } },
