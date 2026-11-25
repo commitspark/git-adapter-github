@@ -114,6 +114,42 @@ describe('Error mapping', () => {
   })
 
   describe('getLatestCommitHash', () => {
+    it.each([
+      [
+        'a branch',
+        { ref: { target: { oid: 'branch-commit' } }, object: null },
+        'branch-commit',
+      ],
+      [
+        'an annotated tag',
+        { ref: { target: { target: { oid: 'tagged-commit' } } }, object: {} },
+        'tagged-commit',
+      ],
+      ['a commit hash', { ref: null, object: { oid: 'abc123' } }, 'abc123'],
+    ])(
+      'should return the commit hash of %s',
+      async (_description, repository, expectedCommitHash) => {
+        mockAxiosInstance.post.mockResolvedValue({
+          data: { data: { repository: repository } },
+        } as Partial<AxiosResponse> as AxiosResponse)
+
+        await expect(
+          getLatestCommitHash(mockOptions, mockAxiosInstance, 'ref'),
+        ).resolves.toEqual(expectedCommitHash)
+      },
+    )
+
+    it('should throw GitAdapterError with NOT_FOUND when the ref does not lead to a commit', async () => {
+      // e.g. an expression for a tree, of which only commits are selected
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { data: { repository: { ref: null, object: {} } } },
+      } as Partial<AxiosResponse> as AxiosResponse)
+
+      await expect(
+        getLatestCommitHash(mockOptions, mockAxiosInstance, 'main:path'),
+      ).rejects.toMatchObject({ code: ErrorCode.NOT_FOUND })
+    })
+
     it('should throw GitAdapterError with UNAUTHORIZED when axios returns 401', async () => {
       const axiosError = new AxiosError('Unauthorized')
       axiosError.response = {

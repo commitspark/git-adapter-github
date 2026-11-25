@@ -95,12 +95,23 @@ export function createLatestCommitQuery(): string {
         repository(owner: $repositoryOwner, name: $repositoryName) {
           ref(qualifiedName: $ref) {
             target {
-              oid
+              ... on Commit {
+                oid
+              }
+              ... on Tag {
+                target {
+                  ... on Commit {
+                    oid
+                  }
+                }
+              }
             }
           }
           object(expression: $ref) {
-            oid
-          } 
+            ... on Commit {
+              oid
+            }
+          }
         }
       }
     `

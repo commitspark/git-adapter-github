@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Write field `schema` of a commit draft to the schema file in the same commit as the entries, so that schema and
   entries can be changed together
 
+### Fixed
+
+- Resolve an annotated tag to the commit it points to instead of to the tag object, and refs that do not lead to a
+  commit to `NOT_FOUND` instead of to the hash of another object, as required by the adapter contract
+
 ## [2.0.0-beta.3] - 2026-11-11
 
 ### Added

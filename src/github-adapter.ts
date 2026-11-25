@@ -176,9 +176,13 @@ export const getLatestCommitHash = async (
     )
   }
 
+  // an annotated tag points to a tag object, which points to the commit; refs and expressions that do not lead to a
+  // commit yield no `oid`, as only commits are selected
+  const repository = response.data.data.repository
   const lastCommit =
-    response.data.data.repository.ref?.target?.oid ??
-    response.data.data.repository.object?.oid ??
+    repository.ref?.target?.oid ??
+    repository.ref?.target?.target?.oid ??
+    repository.object?.oid ??
     undefined
   if (!lastCommit) {
     throw new GitAdapterError(
