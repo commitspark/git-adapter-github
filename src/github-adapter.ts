@@ -153,6 +153,7 @@ export const getLatestCommitHash = async (
           repositoryOwner: gitRepositoryOptions.repositoryOwner,
           repositoryName: gitRepositoryOptions.repositoryName,
           ref: ref,
+          branchRef: `refs/heads/${ref}`,
         },
       },
       {
@@ -181,10 +182,13 @@ export const getLatestCommitHash = async (
     )
   }
 
+  // a branch takes precedence over a tag of the same name, as GitHub does not document its precedence
+  //
   // an annotated tag points to a tag object, which points to the commit; refs and expressions that do not lead to a
   // commit yield no `oid`, as only commits are selected
   const repository = response.data.data.repository
   const lastCommit =
+    repository.branch?.target?.oid ??
     repository.ref?.target?.oid ??
     repository.ref?.target?.target?.oid ??
     repository.object?.oid ??

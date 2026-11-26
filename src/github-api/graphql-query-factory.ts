@@ -100,8 +100,15 @@ export function createCommitMutation(): string {
 
 export function createLatestCommitQuery(): string {
   return `
-      query ($repositoryOwner: String!, $repositoryName: String!, $ref: String!) { 
+      query ($repositoryOwner: String!, $repositoryName: String!, $ref: String!, $branchRef: String!) { 
         repository(owner: $repositoryOwner, name: $repositoryName) {
+          branch: ref(qualifiedName: $branchRef) {
+            target {
+              ... on Commit {
+                oid
+              }
+            }
+          }
           ref(qualifiedName: $ref) {
             target {
               ... on Commit {

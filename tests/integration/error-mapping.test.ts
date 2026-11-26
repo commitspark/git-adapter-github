@@ -147,6 +147,31 @@ describe('Error mapping', () => {
       ).rejects.toMatchObject({ code: ErrorCode.NOT_FOUND })
     })
 
+    it('should resolve a name used by both a branch and a tag to the branch', async () => {
+      mockAxiosInstance.post.mockResolvedValue({
+        data: {
+          data: {
+            repository: {
+              branch: { target: { oid: 'branch-commit' } },
+              ref: { target: { oid: 'tag-commit' } },
+              object: { oid: 'tag-commit' },
+            },
+          },
+        },
+      } as Partial<AxiosResponse> as AxiosResponse)
+
+      await expect(
+        getLatestCommitHash(mockOptions, mockAxiosInstance, 'same'),
+      ).resolves.toEqual('branch-commit')
+      const request = mockAxiosInstance.post.mock.calls[0][1] as {
+        variables: Record<string, string>
+      }
+      expect(request.variables).toMatchObject({
+        ref: 'same',
+        branchRef: 'refs/heads/same',
+      })
+    })
+
     it('should throw GitAdapterError with UNAUTHORIZED when axios returns 401', async () => {
       const axiosError = new AxiosError('Unauthorized')
       axiosError.response = {

@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Write field `schema` of a commit draft to the schema file in the same commit as the entries, so that schema and
   entries can be changed together
 
+### Changed
+
+- Resolve a name that is both a branch name and a tag name to the branch explicitly instead of relying on GitHub's
+  undocumented precedence, as required by the adapter contract
+
 ### Fixed
 
 - Resolve an annotated tag to the commit it points to instead of to the tag object, and refs that do not lead to a
