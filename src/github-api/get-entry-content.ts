@@ -43,7 +43,8 @@ export const getEntryContent = async (
             timeout: 30000,
             cache: cacheOnlyIf(
               (response) =>
-                response.data?.data?.repository?.[COMMIT_ALIAS] != null,
+                response.data?.data?.repository?.[COMMIT_ALIAS]?.oid !==
+                undefined,
             ),
           },
         )
@@ -72,8 +73,9 @@ const processContentResponse = (
 ): void => {
   handleGraphQLErrors(contentResponse)
   const { [COMMIT_ALIAS]: commit, ...filesResponseData } = contentResponse.data
-    .data.repository as Record<string, { text: string } | null>
-  if (!commit) {
+    .data.repository as Record<string, { text?: string; oid?: string } | null>
+  // an object that is no commit, e.g. a tree, yields an empty object without `oid`
+  if (!commit?.oid) {
     throw new GitAdapterError(
       ErrorCode.NOT_FOUND,
       `Commit "${commitHash}" not found`,
@@ -81,8 +83,8 @@ const processContentResponse = (
   }
 
   for (const [queryAlias, fileObject] of Object.entries(filesResponseData)) {
-    if (fileObject === null) {
-      // requested file does not exist at this commit
+    if (fileObject?.text === undefined) {
+      // requested file does not exist at this commit, or its path is a folder
       continue
     }
     filePathsContentMap.set(

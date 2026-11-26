@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Resolve a name that is both a branch name and a tag name to the branch explicitly instead of relying on GitHub's
   undocumented precedence, as required by the adapter contract
+- Report a missing schema file with `BAD_REPOSITORY_DATA` instead of `NOT_FOUND`, as required by the adapter contract,
+  so that callers can tell an incomplete repository from an unknown commit
 
 ### Fixed
 

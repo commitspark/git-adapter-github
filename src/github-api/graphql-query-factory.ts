@@ -1,7 +1,12 @@
 export function createSingleBlobContentQuery(): string {
   return `
-      query ($repositoryOwner: String!, $repositoryName: String!, $expression: String!) { 
+      query ($repositoryOwner: String!, $repositoryName: String!, $commitHash: String!, $expression: String!) { 
         repository(owner: $repositoryOwner, name: $repositoryName) {
+          commit: object(expression: $commitHash) {
+            ... on Commit {
+              oid
+            }
+          }
           object(expression: $expression) {
             ... on Blob {
               text
