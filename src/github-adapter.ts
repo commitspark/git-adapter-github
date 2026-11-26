@@ -106,7 +106,8 @@ export const getSchema = async (
         },
         // a missing commit may be pushed later
         cache: cacheOnlyIf(
-          (response) => response.data?.data?.repository?.commit != null,
+          (response) =>
+            response.data?.data?.repository?.commit?.oid !== undefined,
         ),
       },
     )
@@ -124,7 +125,8 @@ export const getSchema = async (
   handleGraphQLErrors(response)
 
   const repository = response.data?.data?.repository
-  if (!repository?.commit) {
+  // an object that is no commit, e.g. a tree, yields an empty object without `oid`
+  if (!repository?.commit?.oid) {
     throw new GitAdapterError(
       ErrorCode.NOT_FOUND,
       `Commit "${commitHash}" not found in Git repository "${repositoryOwner}/${repositoryName}"`,

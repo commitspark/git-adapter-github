@@ -116,6 +116,11 @@ describe('Error mapping', () => {
         ErrorCode.NOT_FOUND,
       ],
       [
+        'a hash of an object that is no commit',
+        { commit: {}, object: { text: 'schema' } },
+        ErrorCode.NOT_FOUND,
+      ],
+      [
         'a missing schema file',
         { commit: { oid: 'abc123' }, object: null },
         ErrorCode.BAD_REPOSITORY_DATA,

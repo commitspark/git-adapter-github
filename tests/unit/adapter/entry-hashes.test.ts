@@ -256,6 +256,26 @@ describe('Entry hashes', () => {
     expect(query.query).toContain('commit: object(expression: "abc123")')
   })
 
+  it('should report a hash of an object that is no commit as not found', async () => {
+    mockAxiosInstance.post.mockResolvedValue({
+      data: { data: { repository: { commit: {}, file0: { text: 'x' } } } },
+    } as Partial<AxiosResponse> as AxiosResponse)
+
+    await expect(
+      getEntriesByIds(mockOptions, mockAxiosInstance, 'abc123', ['a']),
+    ).rejects.toMatchObject({ code: ErrorCode.NOT_FOUND })
+  })
+
+  it('should skip an entry path that is a folder', async () => {
+    mockAxiosInstance.post.mockResolvedValue({
+      data: { data: { repository: { commit: { oid: 'abc123' }, file0: {} } } },
+    } as Partial<AxiosResponse> as AxiosResponse)
+
+    await expect(
+      getEntriesByIds(mockOptions, mockAxiosInstance, 'abc123', ['a']),
+    ).resolves.toEqual([])
+  })
+
   it('should not query GitHub when no entries are requested', async () => {
     await expect(
       getEntriesByIds(mockOptions, mockAxiosInstance, 'abc123', []),
