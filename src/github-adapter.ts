@@ -27,6 +27,7 @@ import { createEntriesFromFileContent } from './util/entry-factory.ts'
 import { handleGraphQLErrors, handleHttpErrors } from './errors.ts'
 import { getEntryContent } from './github-api/get-entry-content.ts'
 import { getFileHashes } from './github-api/get-file-hashes.ts'
+import { cacheOnlyIf } from './axios/cached-instance.ts'
 import { ENTRY_EXTENSION, GITHUB_GRAPHQL_API_URL } from './types.ts'
 
 export const getEntryHashes = async (
@@ -102,6 +103,10 @@ export const getSchema = async (
         headers: {
           authorization: `Bearer ${token}`,
         },
+        // a missing schema may be due to a commit not yet pushed
+        cache: cacheOnlyIf(
+          (response) => response.data?.data?.repository?.object != null,
+        ),
       },
     )
   } catch (error) {
@@ -148,6 +153,7 @@ export const getLatestCommitHash = async (
           repositoryOwner: gitRepositoryOptions.repositoryOwner,
           repositoryName: gitRepositoryOptions.repositoryName,
           ref: ref,
+          branchRef: `refs/heads/${ref}`,
         },
       },
       {
@@ -176,9 +182,16 @@ export const getLatestCommitHash = async (
     )
   }
 
+  // a branch takes precedence over a tag of the same name, as GitHub does not document its precedence
+  //
+  // an annotated tag points to a tag object, which points to the commit; refs and expressions that do not lead to a
+  // commit yield no `oid`, as only commits are selected
+  const repository = response.data.data.repository
   const lastCommit =
-    response.data.data.repository.ref?.target?.oid ??
-    response.data.data.repository.object?.oid ??
+    repository.branch?.target?.oid ??
+    repository.ref?.target?.oid ??
+    repository.ref?.target?.target?.oid ??
+    repository.object?.oid ??
     undefined
   if (!lastCommit) {
     throw new GitAdapterError(

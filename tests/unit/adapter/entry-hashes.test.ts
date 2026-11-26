@@ -155,6 +155,7 @@ describe('Entry hashes', () => {
       data: {
         data: {
           repository: {
+            commit: { oid: 'abc123' },
             file0: { text: 'metadata:\n  type: A\ndata:\n  field: value\n' },
           },
         },
@@ -190,6 +191,7 @@ describe('Entry hashes', () => {
       data: {
         data: {
           repository: {
+            commit: { oid: 'abc123' },
             file0: { text: 'metadata:\n  type: A\ndata:\n  field: value\n' },
             file1: null,
           },
@@ -211,6 +213,47 @@ describe('Entry hashes', () => {
     expect(entries).toEqual([
       { id: 'a', metadata: { type: 'A' }, data: { field: 'value' } },
     ])
+  })
+
+  it.each([
+    ['invalid YAML', 'a: [\n', 'is no valid YAML'],
+    [
+      'YAML without a mapping',
+      'just text\n',
+      'does not contain a YAML mapping',
+    ],
+    ['an empty file', '', 'does not contain a YAML mapping'],
+    ['a YAML list', '- a\n', 'does not contain a YAML mapping'],
+  ])(
+    'should report an entry file with %s as invalid repository data',
+    async (_description, text, message) => {
+      mockAxiosInstance.post.mockResolvedValue({
+        data: {
+          data: {
+            repository: { commit: { oid: 'abc123' }, file0: { text: text } },
+          },
+        },
+      } as Partial<AxiosResponse> as AxiosResponse)
+
+      await expect(
+        getEntriesByIds(mockOptions, mockAxiosInstance, 'abc123', ['a']),
+      ).rejects.toMatchObject({
+        code: ErrorCode.BAD_REPOSITORY_DATA,
+        message: expect.stringContaining(`Entry file of entry "a" ${message}`),
+      })
+    },
+  )
+
+  it('should report an unknown commit as not found instead of returning no entries', async () => {
+    mockAxiosInstance.post.mockResolvedValue({
+      data: { data: { repository: { commit: null, file0: null } } },
+    } as Partial<AxiosResponse> as AxiosResponse)
+
+    await expect(
+      getEntriesByIds(mockOptions, mockAxiosInstance, 'abc123', ['a']),
+    ).rejects.toMatchObject({ code: ErrorCode.NOT_FOUND })
+    const query = mockAxiosInstance.post.mock.calls[0][1] as { query: string }
+    expect(query.query).toContain('commit: object(expression: "abc123")')
   })
 
   it('should not query GitHub when no entries are requested', async () => {

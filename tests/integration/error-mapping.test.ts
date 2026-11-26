@@ -34,10 +34,7 @@ describe('Error mapping', () => {
         data: { message: 'Repository not found' },
       } as Partial<AxiosResponse> as AxiosResponse
 
-      // Simulate a synchronous throw so getEntryContent's try/catch can map HTTP errors
-      mockAxiosInstance.post.mockImplementation(() => {
-        throw axiosError
-      })
+      mockAxiosInstance.post.mockRejectedValue(axiosError)
 
       await expect(
         getEntryContent(mockOptions, mockAxiosInstance, 'abc123', ['file.txt']),
@@ -114,6 +111,67 @@ describe('Error mapping', () => {
   })
 
   describe('getLatestCommitHash', () => {
+    it.each([
+      [
+        'a branch',
+        { ref: { target: { oid: 'branch-commit' } }, object: null },
+        'branch-commit',
+      ],
+      [
+        'an annotated tag',
+        { ref: { target: { target: { oid: 'tagged-commit' } } }, object: {} },
+        'tagged-commit',
+      ],
+      ['a commit hash', { ref: null, object: { oid: 'abc123' } }, 'abc123'],
+    ])(
+      'should return the commit hash of %s',
+      async (_description, repository, expectedCommitHash) => {
+        mockAxiosInstance.post.mockResolvedValue({
+          data: { data: { repository: repository } },
+        } as Partial<AxiosResponse> as AxiosResponse)
+
+        await expect(
+          getLatestCommitHash(mockOptions, mockAxiosInstance, 'ref'),
+        ).resolves.toEqual(expectedCommitHash)
+      },
+    )
+
+    it('should throw GitAdapterError with NOT_FOUND when the ref does not lead to a commit', async () => {
+      // e.g. an expression for a tree, of which only commits are selected
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { data: { repository: { ref: null, object: {} } } },
+      } as Partial<AxiosResponse> as AxiosResponse)
+
+      await expect(
+        getLatestCommitHash(mockOptions, mockAxiosInstance, 'main:path'),
+      ).rejects.toMatchObject({ code: ErrorCode.NOT_FOUND })
+    })
+
+    it('should resolve a name used by both a branch and a tag to the branch', async () => {
+      mockAxiosInstance.post.mockResolvedValue({
+        data: {
+          data: {
+            repository: {
+              branch: { target: { oid: 'branch-commit' } },
+              ref: { target: { oid: 'tag-commit' } },
+              object: { oid: 'tag-commit' },
+            },
+          },
+        },
+      } as Partial<AxiosResponse> as AxiosResponse)
+
+      await expect(
+        getLatestCommitHash(mockOptions, mockAxiosInstance, 'same'),
+      ).resolves.toEqual('branch-commit')
+      const request = mockAxiosInstance.post.mock.calls[0][1] as {
+        variables: Record<string, string>
+      }
+      expect(request.variables).toMatchObject({
+        ref: 'same',
+        branchRef: 'refs/heads/same',
+      })
+    })
+
     it('should throw GitAdapterError with UNAUTHORIZED when axios returns 401', async () => {
       const axiosError = new AxiosError('Unauthorized')
       axiosError.response = {
@@ -305,6 +363,28 @@ describe('Error mapping', () => {
         getFileHashes(mockOptions, mockAxiosInstance, 'abc123'),
       ).rejects.toThrow(
         new GitAdapterError(ErrorCode.NOT_FOUND, 'Repository not found'),
+      )
+    })
+
+    it('should throw GitAdapterError with NOT_FOUND when the SHA identifies no commit', async () => {
+      const axiosError = new AxiosError('Unprocessable Entity')
+      axiosError.response = {
+        status: 422,
+        data: {
+          message:
+            'Invalid object requested. SHA must identify a commit or a tree.',
+        },
+      } as Partial<AxiosResponse> as AxiosResponse
+
+      mockAxiosInstance.get.mockRejectedValue(axiosError)
+
+      await expect(
+        getFileHashes(mockOptions, mockAxiosInstance, 'abc123'),
+      ).rejects.toThrow(
+        new GitAdapterError(
+          ErrorCode.NOT_FOUND,
+          'Commit "abc123" not found in Git repository "test-owner/test-repo"',
+        ),
       )
     })
 

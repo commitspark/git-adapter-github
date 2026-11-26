@@ -12,6 +12,8 @@ export function createSingleBlobContentQuery(): string {
     `
 }
 
+export const COMMIT_ALIAS = 'commit'
+
 export function createBlobsContentByFilePathsQuery(
   filePaths: string[],
   commitHash: string,
@@ -28,9 +30,16 @@ export function createBlobsContentByFilePathsQuery(
 
     const batchFilenames = filePaths.slice(fileIndex, fileIndex + batchSize)
 
+    // every batch checks the commit, as a missing file cannot be told apart from a missing commit otherwise
     let query = `
       query ($repositoryOwner: String!, $repositoryName: String!) { 
-        repository(owner: $repositoryOwner, name: $repositoryName) {`
+        repository(owner: $repositoryOwner, name: $repositoryName) {
+    ${COMMIT_ALIAS}: object(expression: ${JSON.stringify(commitHash)}) {
+      ... on Commit {
+        oid
+      }
+    }
+`
 
     for (const [j, filename] of batchFilenames.entries()) {
       const fileAliasIndex = fileIndex + j
@@ -91,16 +100,34 @@ export function createCommitMutation(): string {
 
 export function createLatestCommitQuery(): string {
   return `
-      query ($repositoryOwner: String!, $repositoryName: String!, $ref: String!) { 
+      query ($repositoryOwner: String!, $repositoryName: String!, $ref: String!, $branchRef: String!) { 
         repository(owner: $repositoryOwner, name: $repositoryName) {
+          branch: ref(qualifiedName: $branchRef) {
+            target {
+              ... on Commit {
+                oid
+              }
+            }
+          }
           ref(qualifiedName: $ref) {
             target {
-              oid
+              ... on Commit {
+                oid
+              }
+              ... on Tag {
+                target {
+                  ... on Commit {
+                    oid
+                  }
+                }
+              }
             }
           }
           object(expression: $ref) {
-            oid
-          } 
+            ... on Commit {
+              oid
+            }
+          }
         }
       }
     `

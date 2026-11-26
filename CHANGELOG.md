@@ -12,6 +12,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Write field `schema` of a commit draft to the schema file in the same commit as the entries, so that schema and
   entries can be changed together
 
+### Changed
+
+- Resolve a name that is both a branch name and a tag name to the branch explicitly instead of relying on GitHub's
+  undocumented precedence, as required by the adapter contract
+
+### Fixed
+
+- Resolve an annotated tag to the commit it points to instead of to the tag object, and refs that do not lead to a
+  commit to `NOT_FOUND` instead of to the hash of another object, as required by the adapter contract
+- Report entry files with invalid YAML or without a YAML mapping with error code `BAD_REPOSITORY_DATA` and an unknown
+  commit in `getEntryHashes()` with `NOT_FOUND` instead of `INTERNAL_ERROR` or an unhandled error, as required by the
+  adapter contract
+- Report failed requests for entry content with the error code of the HTTP status, e.g. `UNAUTHORIZED`, instead of an
+  unhandled error
+- Report an unknown commit in `getEntriesByIds()` with `NOT_FOUND` instead of returning no entries
+- Cache responses for entries and the schema only if the commit exists, so that a commit requested before it was
+  pushed is found once it is pushed, instead of being reported as missing until the cached response expires after
+  10 minutes
+
 ## [2.0.0-beta.3] - 2026-11-11
 
 ### Added

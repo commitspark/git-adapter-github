@@ -1,6 +1,7 @@
 import { GitHubRepositoryOptions } from '../index.ts'
 import { AxiosCacheInstance } from 'axios-cache-interceptor'
 import { ErrorCode, GitAdapterError } from '@commitspark/git-adapter'
+import { AxiosError } from 'axios'
 import { getPathEntryFolder } from '../util/path-factory.ts'
 import { handleHttpErrors } from '../errors.ts'
 import { GITHUB_REST_API_URL } from '../types.ts'
@@ -36,6 +37,13 @@ export const getFileHashes = async (
       timeout: 30000,
     })
   } catch (error) {
+    // GitHub responds with 422 if the SHA identifies no commit or tree
+    if (error instanceof AxiosError && error.response?.status === 422) {
+      throw new GitAdapterError(
+        ErrorCode.NOT_FOUND,
+        `Commit "${treeSha}" not found in Git repository "${repositoryOwner}/${repositoryName}"`,
+      )
+    }
     handleHttpErrors(error)
   }
 
