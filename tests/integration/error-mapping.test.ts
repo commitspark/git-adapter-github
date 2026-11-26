@@ -108,6 +108,44 @@ describe('Error mapping', () => {
         ),
       )
     })
+
+    it.each([
+      [
+        'an unknown commit',
+        { commit: null, object: null },
+        ErrorCode.NOT_FOUND,
+      ],
+      [
+        'a missing schema file',
+        { commit: { oid: 'abc123' }, object: null },
+        ErrorCode.BAD_REPOSITORY_DATA,
+      ],
+    ])(
+      'should report %s with code %s',
+      async (_description, repository, code) => {
+        mockAxiosInstance.post.mockResolvedValue({
+          data: { data: { repository } },
+        } as Partial<AxiosResponse> as AxiosResponse)
+
+        await expect(
+          getSchema(mockOptions, mockAxiosInstance, 'abc123'),
+        ).rejects.toMatchObject({ code })
+      },
+    )
+
+    it('should return an empty schema file as empty schema', async () => {
+      mockAxiosInstance.post.mockResolvedValue({
+        data: {
+          data: {
+            repository: { commit: { oid: 'abc123' }, object: { text: '' } },
+          },
+        },
+      } as Partial<AxiosResponse> as AxiosResponse)
+
+      await expect(
+        getSchema(mockOptions, mockAxiosInstance, 'abc123'),
+      ).resolves.toBe('')
+    })
   })
 
   describe('getLatestCommitHash', () => {

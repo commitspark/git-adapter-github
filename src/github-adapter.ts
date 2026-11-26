@@ -96,6 +96,7 @@ export const getSchema = async (
         variables: {
           repositoryOwner: repositoryOwner,
           repositoryName: repositoryName,
+          commitHash: commitHash,
           expression: `${commitHash}:${schemaFilePath}`,
         },
       },
@@ -103,9 +104,9 @@ export const getSchema = async (
         headers: {
           authorization: `Bearer ${token}`,
         },
-        // a missing schema may be due to a commit not yet pushed
+        // a missing commit may be pushed later
         cache: cacheOnlyIf(
-          (response) => response.data?.data?.repository?.object != null,
+          (response) => response.data?.data?.repository?.commit != null,
         ),
       },
     )
@@ -122,11 +123,18 @@ export const getSchema = async (
 
   handleGraphQLErrors(response)
 
-  const schema = response.data?.data?.repository?.object?.text
-
-  if (!schema) {
+  const repository = response.data?.data?.repository
+  if (!repository?.commit) {
     throw new GitAdapterError(
       ErrorCode.NOT_FOUND,
+      `Commit "${commitHash}" not found in Git repository "${repositoryOwner}/${repositoryName}"`,
+    )
+  }
+
+  const schema = repository.object?.text
+  if (schema === undefined || schema === null) {
+    throw new GitAdapterError(
+      ErrorCode.BAD_REPOSITORY_DATA,
       `"${schemaFilePath}" not found in Git repository "${repositoryOwner}/${repositoryName}" at commit "${commitHash}"`,
     )
   }
