@@ -344,6 +344,28 @@ describe('Error mapping', () => {
       )
     })
 
+    it('should throw GitAdapterError with NOT_FOUND when the SHA identifies no commit', async () => {
+      const axiosError = new AxiosError('Unprocessable Entity')
+      axiosError.response = {
+        status: 422,
+        data: {
+          message:
+            'Invalid object requested. SHA must identify a commit or a tree.',
+        },
+      } as Partial<AxiosResponse> as AxiosResponse
+
+      mockAxiosInstance.get.mockRejectedValue(axiosError)
+
+      await expect(
+        getFileHashes(mockOptions, mockAxiosInstance, 'abc123'),
+      ).rejects.toThrow(
+        new GitAdapterError(
+          ErrorCode.NOT_FOUND,
+          'Commit "abc123" not found in Git repository "test-owner/test-repo"',
+        ),
+      )
+    })
+
     it('should throw GitAdapterError with INTERNAL_ERROR when response is undefined', async () => {
       // Simulate axios.get resolving to undefined (no throw, but no response)
       mockAxiosInstance.get.mockResolvedValue(

@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Resolve an annotated tag to the commit it points to instead of to the tag object, and refs that do not lead to a
   commit to `NOT_FOUND` instead of to the hash of another object, as required by the adapter contract
+- Report entry files with invalid YAML or without a YAML mapping with error code `BAD_REPOSITORY_DATA` and an unknown
+  commit in `getEntryHashes()` with `NOT_FOUND` instead of `INTERNAL_ERROR` or an unhandled error, as required by the
+  adapter contract
 
 ## [2.0.0-beta.3] - 2026-11-11
 

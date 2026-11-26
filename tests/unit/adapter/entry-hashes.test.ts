@@ -213,6 +213,31 @@ describe('Entry hashes', () => {
     ])
   })
 
+  it.each([
+    ['invalid YAML', 'a: [\n', 'is no valid YAML'],
+    [
+      'YAML without a mapping',
+      'just text\n',
+      'does not contain a YAML mapping',
+    ],
+    ['an empty file', '', 'does not contain a YAML mapping'],
+    ['a YAML list', '- a\n', 'does not contain a YAML mapping'],
+  ])(
+    'should report an entry file with %s as invalid repository data',
+    async (_description, text, message) => {
+      mockAxiosInstance.post.mockResolvedValue({
+        data: { data: { repository: { file0: { text: text } } } },
+      } as Partial<AxiosResponse> as AxiosResponse)
+
+      await expect(
+        getEntriesByIds(mockOptions, mockAxiosInstance, 'abc123', ['a']),
+      ).rejects.toMatchObject({
+        code: ErrorCode.BAD_REPOSITORY_DATA,
+        message: expect.stringContaining(`Entry file of entry "a" ${message}`),
+      })
+    },
+  )
+
   it('should not query GitHub when no entries are requested', async () => {
     await expect(
       getEntriesByIds(mockOptions, mockAxiosInstance, 'abc123', []),
