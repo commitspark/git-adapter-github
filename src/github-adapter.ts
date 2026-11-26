@@ -27,6 +27,7 @@ import { createEntriesFromFileContent } from './util/entry-factory.ts'
 import { handleGraphQLErrors, handleHttpErrors } from './errors.ts'
 import { getEntryContent } from './github-api/get-entry-content.ts'
 import { getFileHashes } from './github-api/get-file-hashes.ts'
+import { cacheOnlyIf } from './axios/cached-instance.ts'
 import { ENTRY_EXTENSION, GITHUB_GRAPHQL_API_URL } from './types.ts'
 
 export const getEntryHashes = async (
@@ -102,6 +103,10 @@ export const getSchema = async (
         headers: {
           authorization: `Bearer ${token}`,
         },
+        // a missing schema may be due to a commit not yet pushed
+        cache: cacheOnlyIf(
+          (response) => response.data?.data?.repository?.object != null,
+        ),
       },
     )
   } catch (error) {

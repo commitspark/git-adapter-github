@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   adapter contract
 - Report failed requests for entry content with the error code of the HTTP status, e.g. `UNAUTHORIZED`, instead of an
   unhandled error
+- Report an unknown commit in `getEntriesByIds()` with `NOT_FOUND` instead of returning no entries
+- Cache responses for entries and the schema only if the commit exists, so that a commit pushed after a request is
+  found instead of reported as missing for up to 10 minutes
 
 ## [2.0.0-beta.3] - 2026-11-11
 
