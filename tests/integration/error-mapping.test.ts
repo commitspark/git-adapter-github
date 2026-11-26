@@ -34,10 +34,7 @@ describe('Error mapping', () => {
         data: { message: 'Repository not found' },
       } as Partial<AxiosResponse> as AxiosResponse
 
-      // Simulate a synchronous throw so getEntryContent's try/catch can map HTTP errors
-      mockAxiosInstance.post.mockImplementation(() => {
-        throw axiosError
-      })
+      mockAxiosInstance.post.mockRejectedValue(axiosError)
 
       await expect(
         getEntryContent(mockOptions, mockAxiosInstance, 'abc123', ['file.txt']),

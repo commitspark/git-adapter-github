@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Report entry files with invalid YAML or without a YAML mapping with error code `BAD_REPOSITORY_DATA` and an unknown
   commit in `getEntryHashes()` with `NOT_FOUND` instead of `INTERNAL_ERROR` or an unhandled error, as required by the
   adapter contract
+- Report failed requests for entry content with the error code of the HTTP status, e.g. `UNAUTHORIZED`, instead of an
+  unhandled error
 
 ## [2.0.0-beta.3] - 2026-11-11
 

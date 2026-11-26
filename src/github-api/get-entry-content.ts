@@ -20,36 +20,34 @@ export const getEntryContent = async (
 
   const requestPromises = []
   for (const contentQuery of queries) {
-    try {
-      requestPromises.push(
-        axiosCacheInstance
-          .post(
-            GITHUB_GRAPHQL_API_URL,
-            {
-              query: contentQuery,
-              variables: {
-                repositoryOwner: gitRepositoryOptions.repositoryOwner,
-                repositoryName: gitRepositoryOptions.repositoryName,
-              },
+    requestPromises.push(
+      axiosCacheInstance
+        .post(
+          GITHUB_GRAPHQL_API_URL,
+          {
+            query: contentQuery,
+            variables: {
+              repositoryOwner: gitRepositoryOptions.repositoryOwner,
+              repositoryName: gitRepositoryOptions.repositoryName,
             },
-            {
-              headers: {
-                authorization: `Bearer ${gitRepositoryOptions.accessToken}`,
-              },
-              timeout: 30000,
+          },
+          {
+            headers: {
+              authorization: `Bearer ${gitRepositoryOptions.accessToken}`,
             },
-          )
-          .then((contentResponse) =>
-            processContentResponse(
-              filePathsContentMap,
-              queryFilenameAliasMap,
-              contentResponse,
-            ),
+            timeout: 30000,
+          },
+        )
+        // map only failed requests, so that errors of processing the response are not mapped again
+        .catch(handleHttpErrors)
+        .then((contentResponse) =>
+          processContentResponse(
+            filePathsContentMap,
+            queryFilenameAliasMap,
+            contentResponse,
           ),
-      )
-    } catch (error) {
-      handleHttpErrors(error)
-    }
+        ),
+    )
   }
   await Promise.all(requestPromises)
 
